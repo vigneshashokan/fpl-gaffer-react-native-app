@@ -17,6 +17,11 @@ import { GwNavBar } from '@/components/team/GwNavBar';
 import { SegmentedControl } from '@/components/picks/SegmentedControl';
 import { PickRow } from '@/components/picks/PickRow';
 import { PicksCard } from '@/components/picks/PicksCard';
+import { TransferInfoCard } from '@/components/transfer/TransferInfoCard';
+import { DeadlineBanner } from '@/components/transfer/DeadlineBanner';
+import { ChipsRow } from '@/components/transfer/ChipsRow';
+import { TransferPitch } from '@/components/transfer/TransferPitch';
+import { TransferSuggestionsCard } from '@/components/transfer/TransferSuggestionsCard';
 import { apexTokens } from '@/constants/apexTokens';
 import { PitchMarks } from '@/components/pitch/PitchMarks';
 import { ApexPitchMarks } from '@/components/pitch/ApexPitchMarks';
@@ -363,6 +368,82 @@ describe('PickRow', () => {
     // Haaland is in our SQUAD
     const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} />);
     expect(getByText('In team')).toBeTruthy();
+  });
+});
+
+// ── TransferInfoCard ──────────────────────────────────────────
+describe('TransferInfoCard', () => {
+  it('shows team name, GW, squad value', () => {
+    const { getByText } = render(
+      <TransferInfoCard
+        teamName="Apex Pitch FC"
+        nextGw={25}
+        squadValue={102.5}
+        freeTransfers={1}
+        inBank={2.4}
+        gradFrom="#37003C"
+        gradTo="#5B0F63"
+      />
+    );
+    expect(getByText('Apex Pitch FC')).toBeTruthy();
+    expect(getByText('Gameweek 25')).toBeTruthy();
+    expect(getByText('£102.5m')).toBeTruthy();
+    expect(getByText('£2.4m')).toBeTruthy();
+  });
+});
+
+// ── DeadlineBanner ────────────────────────────────────────────
+describe('DeadlineBanner', () => {
+  it('renders deadline copy', () => {
+    const tk = apexTokens(false, 'classic');
+    const { getByText } = render(
+      <DeadlineBanner nextGw={25} deadline="Sat 11:00AM PST" tk={tk} />
+    );
+    expect(getByText('Deadline for Gameweek 25: Sat 11:00AM PST')).toBeTruthy();
+  });
+});
+
+// ── ChipsRow ──────────────────────────────────────────────────
+describe('ChipsRow', () => {
+  it('renders chip names', () => {
+    const tk = apexTokens(false, 'classic');
+    const chips = [
+      { name: 'Wildcard', status: 'Available',  state: 'active' as const },
+      { name: 'Free Hit', status: 'Used GW 12', state: 'used'   as const, playedGw: 12 },
+    ];
+    const { getByText } = render(<ChipsRow chips={chips} tk={tk} />);
+    expect(getByText('Wildcard')).toBeTruthy();
+    expect(getByText('Free Hit')).toBeTruthy();
+  });
+});
+
+// ── TransferPitch ─────────────────────────────────────────────
+describe('TransferPitch', () => {
+  it('renders rows with players', () => {
+    const rows = [
+      [{ name: 'Haaland', p: 14.6, pos: 'FWD' as const, club: 'MCI' as const, tp: 175, f: 9.1, own: 62.3, gw: 16 }],
+      [{ name: 'Raya', p: 4.2, pos: 'GKP' as const, club: 'ARS' as const, tp: 78, f: 4.2, own: 9.1, gw: 3 }],
+    ];
+    const { getByText } = render(<TransferPitch rows={rows} pitchStyle="realistic" />);
+    expect(getByText('Haaland')).toBeTruthy();
+    expect(getByText('£14.6m')).toBeTruthy();
+  });
+});
+
+// ── TransferSuggestionsCard ───────────────────────────────────
+describe('TransferSuggestionsCard', () => {
+  it('renders out/in players + gain', () => {
+    const tk = apexTokens(false, 'classic');
+    const suggestions = [
+      { id: 't1', out: 'Walker', outClub: 'MCI' as const, in: 'Muñoz', inClub: 'CRY' as const, detail: 'Rotation risk', gain: '+6 xPts' },
+    ];
+    const { getByText } = render(
+      <TransferSuggestionsCard suggestions={suggestions} tk={tk} />
+    );
+    expect(getByText('Transfer Suggestions')).toBeTruthy();
+    expect(getByText('Walker')).toBeTruthy();
+    expect(getByText('Muñoz')).toBeTruthy();
+    expect(getByText('+6 xPts')).toBeTruthy();
   });
 });
 
