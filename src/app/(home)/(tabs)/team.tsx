@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
 import { getTheme } from '@/constants/theme';
 import { apexTokens } from '@/constants/apexTokens';
-import { APEX_TEAM } from '@/constants/data';
+import { APEX_TEAM, PitchPlayer } from '@/constants/data';
 import { ApexPitch } from '@/components/pitch/ApexPitch';
 import { HeroCard } from '@/components/team/HeroCard';
 import { ApexDugout } from '@/components/team/ApexDugout';
@@ -27,6 +28,7 @@ function stateFor(gw: number): GwState {
 }
 
 export default function TeamTab() {
+  const router = useRouter();
   const { paletteKey, dark, pitchStyle } = useThemeStore();
   const t = getTheme(paletteKey, dark);
   const tk = apexTokens(dark, paletteKey);
@@ -64,6 +66,13 @@ export default function TeamTab() {
   const confirm = () => {
     setSavedCaptain(pendingCaptain);
     setPendingSuggestions({});
+  };
+
+  const openPlayer = (p: PitchPlayer) => {
+    router.push({
+      pathname: '/(home)/player/[name]',
+      params: { name: p.name, from: 'team' },
+    });
   };
 
   const activeChip = at.transfer.chips.find((c) => c.playedGw === gw);
@@ -116,7 +125,12 @@ export default function TeamTab() {
               <View style={styles.chipBannerIcon} />
             </View>
           )}
-          <ApexPitch rows={at.pitch} pitchStyle={pitchStyle} upcoming={isUpcoming} />
+          <ApexPitch
+            rows={at.pitch}
+            pitchStyle={pitchStyle}
+            upcoming={isUpcoming}
+            onPlayerPress={openPlayer}
+          />
         </View>
 
         <View style={styles.section}>
