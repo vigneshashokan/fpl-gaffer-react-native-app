@@ -31,9 +31,12 @@ export default function TopPicksTab() {
     scrollerRef.current?.scrollTo({ x: i * width, animated: true });
   };
 
-  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  // Track active segment while the finger is moving, not just at the end —
+  // makes the highlight feel responsive instead of waiting ~300ms for the
+  // snap animation to finish.
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (idx !== active) setActive(idx);
+    if (idx !== active && idx >= 0 && idx < ORDER.length) setActive(idx);
   };
 
   return (
@@ -66,8 +69,9 @@ export default function TopPicksTab() {
         ref={scrollerRef}
         horizontal
         pagingEnabled
+        decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onMomentumEnd}
+        onScroll={onScroll}
         scrollEventThrottle={16}
         style={{ flex: 1 }}
       >
