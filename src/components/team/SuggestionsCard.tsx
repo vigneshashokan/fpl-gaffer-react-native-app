@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Icon } from '@/components/ui/Icon';
 import { ApplyCheckbox } from '@/components/ui/ApplyCheckbox';
+import { ApplyAllToggle } from '@/components/ui/ApplyAllToggle';
 import { Suggestion } from '@/constants/data';
 import { ApexTokens } from '@/constants/apexTokens';
 
@@ -12,6 +13,7 @@ interface SuggestionsCardProps {
   editable?: boolean;
   applied?: Record<string, boolean>;
   onToggle?: (id: string) => void;
+  onToggleAll?: (next: boolean) => void;
   lockedNote?: string;
 }
 
@@ -21,9 +23,14 @@ export function SuggestionsCard({
   editable = false,
   applied = {},
   onToggle,
+  onToggleAll,
   lockedNote = 'Gameweek is live — suggestions are locked.',
 }: SuggestionsCardProps) {
   const bulbColor = editable ? tk.yellow : tk.faint;
+  const allChecked =
+    editable &&
+    suggestions.length > 0 &&
+    suggestions.every((s) => !!applied[s.id]);
   return (
     <View
       style={[
@@ -47,7 +54,13 @@ export function SuggestionsCard({
           </Svg>
           <Text style={[styles.title, { color: tk.text }]}>Team Suggestions</Text>
         </View>
-        {!editable && (
+        {editable ? (
+          <ApplyAllToggle
+            checked={allChecked}
+            onToggle={() => onToggleAll?.(!allChecked)}
+            tk={tk}
+          />
+        ) : (
           <View
             style={[
               styles.lockedBadge,

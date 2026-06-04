@@ -50,6 +50,12 @@ export default function TeamTab() {
   const toggleSuggestion = (id: string) =>
     setPendingSuggestions((s) => ({ ...s, [id]: !s[id] }));
 
+  const toggleAllSuggestions = (next: boolean) => {
+    const all: Record<string, boolean> = {};
+    if (next) at.suggestions.forEach((s) => (all[s.id] = true));
+    setPendingSuggestions(all);
+  };
+
   const undo = () => {
     setPendingCaptain(savedCaptain);
     setPendingSuggestions({});
@@ -140,6 +146,7 @@ export default function TeamTab() {
             editable={isUpcoming}
             applied={pendingSuggestions}
             onToggle={toggleSuggestion}
+            onToggleAll={toggleAllSuggestions}
             lockedNote={
               gwState === 'live'
                 ? 'Gameweek is live — suggestions are locked.'

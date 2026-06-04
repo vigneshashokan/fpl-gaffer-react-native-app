@@ -2,18 +2,29 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Kit } from '@/components/ui/Kit';
+import { ApplyCheckbox } from '@/components/ui/ApplyCheckbox';
+import { ApplyAllToggle } from '@/components/ui/ApplyAllToggle';
 import { TransferSuggestion } from '@/constants/data';
 import { ApexTokens } from '@/constants/apexTokens';
 
 interface TransferSuggestionsCardProps {
   suggestions: TransferSuggestion[];
   tk: ApexTokens;
+  applied?: Record<string, boolean>;
+  onToggle?: (id: string) => void;
+  onToggleAll?: (next: boolean) => void;
 }
 
 export function TransferSuggestionsCard({
   suggestions,
   tk,
+  applied = {},
+  onToggle,
+  onToggleAll,
 }: TransferSuggestionsCardProps) {
+  const allChecked =
+    suggestions.length > 0 && suggestions.every((s) => !!applied[s.id]);
+
   return (
     <View
       style={[
@@ -37,49 +48,69 @@ export function TransferSuggestionsCard({
           </Svg>
           <Text style={[styles.title, { color: tk.text }]}>Transfer Suggestions</Text>
         </View>
+        {onToggleAll && (
+          <ApplyAllToggle
+            checked={allChecked}
+            onToggle={() => onToggleAll(!allChecked)}
+            tk={tk}
+          />
+        )}
       </View>
 
-      {suggestions.map((s, i) => (
-        <View
-          key={s.id}
-          style={[
-            styles.row,
-            {
-              marginTop: i === 0 ? 12 : 8,
-            },
-          ]}
-        >
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View style={styles.swapRow}>
-              <Kit club={s.outClub} size={24} />
-              <Text style={[styles.out, { color: tk.pink }]} numberOfLines={1}>
-                {s.out}
-              </Text>
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M5 12h14M13 6l6 6-6 6"
-                  stroke={tk.faint}
-                  strokeWidth={2.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-              <Kit club={s.inClub} size={24} />
-              <Text style={[styles.in, { color: tk.green }]} numberOfLines={1}>
-                {s.in}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <View style={[styles.gain, { backgroundColor: tk.greenSoft }]}>
-                <Text style={[styles.gainText, { color: tk.green }]}>{s.gain}</Text>
+      {suggestions.map((s, i) => {
+        const done = !!applied[s.id];
+        return (
+          <View
+            key={s.id}
+            style={[
+              styles.row,
+              {
+                backgroundColor: done ? tk.greenSoft : 'transparent',
+                borderColor: done ? tk.green : 'transparent',
+                marginTop: i === 0 ? 12 : 8,
+              },
+            ]}
+          >
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={styles.swapRow}>
+                <Kit club={s.outClub} size={24} />
+                <Text style={[styles.out, { color: tk.pink }]} numberOfLines={1}>
+                  {s.out}
+                </Text>
+                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    stroke={tk.faint}
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+                <Kit club={s.inClub} size={24} />
+                <Text style={[styles.in, { color: tk.green }]} numberOfLines={1}>
+                  {s.in}
+                </Text>
               </View>
-              <Text style={[styles.detail, { color: tk.faint }]} numberOfLines={2}>
-                {s.detail}
-              </Text>
+              <View style={styles.detailRow}>
+                <View style={[styles.gain, { backgroundColor: tk.greenSoft }]}>
+                  <Text style={[styles.gainText, { color: tk.green }]}>{s.gain}</Text>
+                </View>
+                <Text style={[styles.detail, { color: tk.faint }]} numberOfLines={2}>
+                  {s.detail}
+                </Text>
+              </View>
             </View>
+            {onToggle && (
+              <ApplyCheckbox
+                checked={done}
+                onChange={() => onToggle(s.id)}
+                green={tk.green}
+                border={tk.cardBorder}
+              />
+            )}
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -118,6 +149,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderRadius: 13,
+    borderWidth: 1.5,
     paddingVertical: 12,
     paddingHorizontal: 4,
   },
