@@ -6,6 +6,9 @@ import { PillBtn } from '@/components/ui/PillBtn';
 import { Kit } from '@/components/ui/Kit';
 import { PlayerToken } from '@/components/ui/PlayerToken';
 import { GafferLogo } from '@/components/ui/GafferLogo';
+import { Field } from '@/components/forms/Field';
+import { SocialBtn } from '@/components/forms/SocialBtn';
+import { SlideVisual } from '@/components/onboarding/SlideVisual';
 import { PitchMarks } from '@/components/pitch/PitchMarks';
 import { ApexPitchMarks } from '@/components/pitch/ApexPitchMarks';
 import { Pitch } from '@/components/pitch/Pitch';
@@ -130,6 +133,65 @@ describe('GafferLogo', () => {
   });
   it('renders mark variant', () => {
     const { toJSON } = render(<GafferLogo variant="mark" />);
+    expect(toJSON()).toBeTruthy();
+  });
+});
+
+// ── Field ─────────────────────────────────────────────────────
+describe('Field', () => {
+  const baseProps = {
+    placeholder: 'Email',
+    value: '',
+    onChangeText: () => {},
+    surfaceAlt: '#F6F1FA',
+    line: '#ECEEF6',
+    accent: '#00B863',
+    text: '#23042B',
+    textMuted: '#74627E',
+  };
+
+  it('renders email field', () => {
+    const { getByPlaceholderText } = render(
+      <Field {...baseProps} icon="mail" placeholder="Email address" />
+    );
+    expect(getByPlaceholderText('Email address')).toBeTruthy();
+  });
+
+  it('renders password field', () => {
+    const { getByPlaceholderText } = render(
+      <Field {...baseProps} icon="lock" placeholder="Password" secureTextEntry />
+    );
+    expect(getByPlaceholderText('Password')).toBeTruthy();
+  });
+});
+
+// ── SocialBtn ─────────────────────────────────────────────────
+describe('SocialBtn', () => {
+  it('renders google', () => {
+    const { getByText } = render(<SocialBtn provider="google" onPress={() => {}} />);
+    expect(getByText('Continue with Google')).toBeTruthy();
+  });
+
+  it('renders apple', () => {
+    const { getByText } = render(<SocialBtn provider="apple" onPress={() => {}} />);
+    expect(getByText('Continue with Apple')).toBeTruthy();
+  });
+});
+
+// ── SlideVisual ───────────────────────────────────────────────
+describe('SlideVisual', () => {
+  it('renders picks variant', () => {
+    const { toJSON } = render(<SlideVisual variant="picks" />);
+    expect(toJSON()).toBeTruthy();
+  });
+
+  it('renders team variant', () => {
+    const { toJSON } = render(<SlideVisual variant="team" />);
+    expect(toJSON()).toBeTruthy();
+  });
+
+  it('renders strategy variant', () => {
+    const { toJSON } = render(<SlideVisual variant="strategy" />);
     expect(toJSON()).toBeTruthy();
   });
 });
