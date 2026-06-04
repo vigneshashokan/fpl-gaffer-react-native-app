@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GafferLogo } from '@/components/ui/GafferLogo';
 import { AccountMenu } from './AccountMenu';
@@ -12,12 +13,22 @@ export function BrandHeader() {
   const signOut = useAuthStore((s) => s.signOut);
   const router = useRouter();
   const t = getTheme(paletteKey, dark);
+  const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <View style={[styles.header, { backgroundColor: t.bg, borderBottomColor: t.line }]}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: t.bg,
+          borderBottomColor: t.line,
+          paddingTop: insets.top + 6,
+        },
+      ]}
+    >
       <View style={styles.row}>
-        <GafferLogo size={30} light={dark} />
+        <GafferLogo size={32} light={dark} />
         <Pressable
           onPress={() => setMenuOpen(true)}
           style={[styles.avatar, { backgroundColor: t.primary }]}
@@ -48,7 +59,6 @@ export function BrandHeader() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: 52,
     borderBottomWidth: 1,
   },
   row: {
