@@ -1,21 +1,128 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { getTheme } from '@/constants/theme';
+import { apexTokens } from '@/constants/apexTokens';
+import { TOP_PICKS, TEAM_INFO, Position } from '@/constants/data';
+import { SegmentedControl } from '@/components/picks/SegmentedControl';
+import { PicksCard } from '@/components/picks/PicksCard';
+
+const ORDER: Position[] = ['GKP', 'DEF', 'MID', 'FWD'];
+const H_PADDING = 16;
 
 export default function TopPicksTab() {
   const { paletteKey, dark } = useThemeStore();
   const t = getTheme(paletteKey, dark);
+  const tk = apexTokens(dark, paletteKey);
+  const { width } = useWindowDimensions();
+  const scrollerRef = useRef<ScrollView>(null);
+  const [active, setActive] = useState(0);
+
+  const goTo = (i: number) => {
+    setActive(i);
+    scrollerRef.current?.scrollTo({ x: i * width, animated: true });
+  };
+
+  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (idx !== active) setActive(idx);
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: t.bg }]}>
-      <Text style={[styles.title, { color: t.text }]}>Top Picks</Text>
-      <Text style={[styles.body, { color: t.textMuted }]}>Coming in Task 6</Text>
+    <View style={{ flex: 1, backgroundColor: tk.bg }}>
+      <View style={styles.header}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { color: tk.text }]}>Top Picks</Text>
+          <View style={[styles.livePill, { backgroundColor: tk.greenSoft }]}>
+            <View style={[styles.dot, { backgroundColor: tk.green }]} />
+            <Text style={[styles.liveText, { color: tk.green }]}>
+              GW{TEAM_INFO.gw} LIVE
+            </Text>
+          </View>
+        </View>
+        <Text style={[styles.subtitle, { color: tk.variant }]}>
+          Top Picks will refresh once the current game week is done.
+        </Text>
+      </View>
+
+      <View style={styles.controlWrap}>
+        <SegmentedControl
+          options={ORDER}
+          value={active}
+          onChange={goTo}
+          tk={tk}
+        />
+      </View>
+
+      <ScrollView
+        ref={scrollerRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onMomentumEnd}
+        scrollEventThrottle={16}
+      >
+        {ORDER.map((pos) => (
+          <View key={pos} style={{ width, paddingHorizontal: H_PADDING, paddingBottom: 16 }}>
+            <PicksCard pos={pos} rows={TOP_PICKS[pos]} tk={tk} dark={dark} />
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  title: { fontFamily: 'Archivo_900Black', fontSize: 24 },
-  body:  { fontFamily: 'Archivo_500Medium', fontSize: 14 },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 14,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    marginBottom: 5,
+  },
+  title: {
+    fontFamily: 'Archivo_800ExtraBold',
+    fontSize: 24,
+    letterSpacing: -0.48,
+    lineHeight: 32,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  liveText: {
+    fontFamily: 'Archivo_700Bold',
+    fontSize: 10,
+    letterSpacing: 0.7,
+  },
+  subtitle: {
+    fontFamily: 'Archivo_400Regular',
+    fontSize: 13.5,
+    lineHeight: 19,
+  },
+  controlWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
 });
