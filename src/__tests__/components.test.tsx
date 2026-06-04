@@ -14,6 +14,9 @@ import { ApexDugout } from '@/components/team/ApexDugout';
 import { CaptainPickCard } from '@/components/team/CaptainPickCard';
 import { SuggestionsCard } from '@/components/team/SuggestionsCard';
 import { GwNavBar } from '@/components/team/GwNavBar';
+import { SegmentedControl } from '@/components/picks/SegmentedControl';
+import { PickRow } from '@/components/picks/PickRow';
+import { PicksCard } from '@/components/picks/PicksCard';
 import { apexTokens } from '@/constants/apexTokens';
 import { PitchMarks } from '@/components/pitch/PitchMarks';
 import { ApexPitchMarks } from '@/components/pitch/ApexPitchMarks';
@@ -329,5 +332,58 @@ describe('GwNavBar', () => {
     const tk = apexTokens(false, 'classic');
     const { getByText } = render(<GwNavBar gw={24} state="live" tk={tk} />);
     expect(getByText('Gameweek 24')).toBeTruthy();
+  });
+});
+
+// ── SegmentedControl ──────────────────────────────────────────
+describe('SegmentedControl', () => {
+  it('renders 4 segments', () => {
+    const tk = apexTokens(false, 'classic');
+    const { getByText } = render(
+      <SegmentedControl options={['GKP', 'DEF', 'MID', 'FWD']} value={0} onChange={() => {}} tk={tk} />
+    );
+    expect(getByText('GKP')).toBeTruthy();
+    expect(getByText('FWD')).toBeTruthy();
+  });
+});
+
+// ── PickRow ───────────────────────────────────────────────────
+describe('PickRow', () => {
+  const player = { name: 'Haaland', club: 'MCI' as const, p: 14.6, f: 9.1, tp: 175, own: 62.3, gw: 16 };
+
+  it('shows name and price', () => {
+    const tk = apexTokens(false, 'classic');
+    const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} />);
+    expect(getByText('Haaland')).toBeTruthy();
+    expect(getByText('£14.6m')).toBeTruthy();
+  });
+
+  it('marks squad members with In team badge', () => {
+    const tk = apexTokens(false, 'classic');
+    // Haaland is in our SQUAD
+    const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} />);
+    expect(getByText('In team')).toBeTruthy();
+  });
+});
+
+// ── PicksCard ─────────────────────────────────────────────────
+describe('PicksCard', () => {
+  it('renders header for GKP', () => {
+    const tk = apexTokens(false, 'classic');
+    const rows = [
+      { name: 'Raya', club: 'ARS' as const, p: 5.6, f: 4.8, tp: 92, own: 28.4, gw: 6 },
+    ];
+    const { getByText } = render(<PicksCard pos="GKP" rows={rows} tk={tk} dark={false} />);
+    expect(getByText('Goalkeepers')).toBeTruthy();
+    expect(getByText('Raya')).toBeTruthy();
+  });
+
+  it('renders header for FWD', () => {
+    const tk = apexTokens(false, 'classic');
+    const rows = [
+      { name: 'Wood', club: 'NFO' as const, p: 7.5, f: 6.7, tp: 101, own: 26.1, gw: 9 },
+    ];
+    const { getByText } = render(<PicksCard pos="FWD" rows={rows} tk={tk} dark={false} />);
+    expect(getByText('Forwards')).toBeTruthy();
   });
 });
