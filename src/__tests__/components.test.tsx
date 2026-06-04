@@ -9,6 +9,12 @@ import { GafferLogo } from '@/components/ui/GafferLogo';
 import { Field } from '@/components/forms/Field';
 import { SocialBtn } from '@/components/forms/SocialBtn';
 import { SlideVisual } from '@/components/onboarding/SlideVisual';
+import { HeroCard } from '@/components/team/HeroCard';
+import { ApexDugout } from '@/components/team/ApexDugout';
+import { CaptainPickCard } from '@/components/team/CaptainPickCard';
+import { SuggestionsCard } from '@/components/team/SuggestionsCard';
+import { GwNavBar } from '@/components/team/GwNavBar';
+import { apexTokens } from '@/constants/apexTokens';
 import { PitchMarks } from '@/components/pitch/PitchMarks';
 import { ApexPitchMarks } from '@/components/pitch/ApexPitchMarks';
 import { Pitch } from '@/components/pitch/Pitch';
@@ -246,5 +252,82 @@ describe('ApexPitch', () => {
   it('renders upcoming (no pts)', () => {
     const { toJSON } = render(<ApexPitch rows={mockApexRows} pitchStyle="flat" upcoming={true} />);
     expect(toJSON()).toBeTruthy();
+  });
+});
+
+// ── HeroCard ──────────────────────────────────────────────────
+describe('HeroCard', () => {
+  it('renders team name and points', () => {
+    const { getByText } = render(
+      <HeroCard
+        teamName="Apex Pitch FC"
+        totalPoints={1452}
+        gwPts={64}
+        avgPoints={52}
+        highestPoints={118}
+        gradFrom="#37003C"
+        gradTo="#5B0F63"
+      />
+    );
+    expect(getByText('Apex Pitch FC')).toBeTruthy();
+    expect(getByText('1,452')).toBeTruthy();
+    expect(getByText('64')).toBeTruthy();
+  });
+});
+
+// ── ApexDugout ────────────────────────────────────────────────
+describe('ApexDugout', () => {
+  it('renders bench players', () => {
+    const players = [
+      { name: 'Henderson', pts: 0, gk: true },
+      { name: 'Truffert',  pts: 1 },
+    ];
+    const { getByText } = render(
+      <ApexDugout players={players} card="#fff" cardBorder="#E7E9F2" faint="#8B8694" />
+    );
+    expect(getByText('Dugout')).toBeTruthy();
+    expect(getByText('Henderson')).toBeTruthy();
+  });
+});
+
+// ── CaptainPickCard ───────────────────────────────────────────
+describe('CaptainPickCard', () => {
+  it('marks the applied captain', () => {
+    const tk = apexTokens(false, 'classic');
+    const picks = [
+      { name: 'Haaland', club: 'MCI' as const, xp: 8.4, note: 'Home vs bottom-half defence' },
+      { name: 'Salah',   club: 'LIV' as const, xp: 7.1, note: 'Penalties' },
+    ];
+    const { getByText } = render(
+      <CaptainPickCard picks={picks} captainApplied="Haaland" tk={tk} />
+    );
+    expect(getByText('Captain Pick')).toBeTruthy();
+    expect(getByText('Haaland')).toBeTruthy();
+    expect(getByText('Locked')).toBeTruthy();
+  });
+});
+
+// ── SuggestionsCard ───────────────────────────────────────────
+describe('SuggestionsCard', () => {
+  it('renders suggestions in locked state', () => {
+    const tk = apexTokens(false, 'classic');
+    const suggestions = [
+      { id: 's1', type: 'sub' as const, text: 'Sub Walker',  detail: 'Rotation risk', gain: '+2 xPts', wasApplied: true },
+      { id: 's2', type: 'sub' as const, text: 'Sub Turner',  detail: 'Areola knock',  gain: '+1 xPts', wasApplied: false },
+    ];
+    const { getByText } = render(<SuggestionsCard suggestions={suggestions} tk={tk} />);
+    expect(getByText('Team Suggestions')).toBeTruthy();
+    expect(getByText('Sub Walker')).toBeTruthy();
+    expect(getByText('Applied')).toBeTruthy();
+    expect(getByText('Not applied')).toBeTruthy();
+  });
+});
+
+// ── GwNavBar ──────────────────────────────────────────────────
+describe('GwNavBar', () => {
+  it('renders live gameweek', () => {
+    const tk = apexTokens(false, 'classic');
+    const { getByText } = render(<GwNavBar gw={24} state="live" tk={tk} />);
+    expect(getByText('Gameweek 24')).toBeTruthy();
   });
 });
