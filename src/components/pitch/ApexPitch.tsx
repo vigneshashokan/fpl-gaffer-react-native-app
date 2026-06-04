@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, useWindowDimensions, LayoutChangeEvent } from 'react-native';
 import { ApexPitchMarks } from './ApexPitchMarks';
 import { AvatarDisc } from '@/components/ui/AvatarDisc';
 import { PointPill } from '@/components/ui/PointPill';
@@ -18,17 +18,48 @@ interface ApexPitchProps {
   upcoming?: boolean;
 }
 
+// FPL formations can stack up to 5 outfielders in a row (e.g. 5 MID in 3-5-2).
+// Sizing the slot for the worst case keeps jerseys consistent across all rows
+// regardless of formation, and prevents wider rows from clipping off-screen.
+const MAX_ROW = 5;
+// Page paddingHorizontal (16×2 in team.tsx) + pitch paddingHorizontal (6×2).
+const SIDE_CHROME = 32 + 12;
+const SLOT_MIN = 56;
+const SLOT_MAX = 90;
+const AVATAR_RATIO = 0.51;
+const WRAPPER_RATIO = 0.6;
+
 export function ApexPitch({ rows, pitchStyle = 'realistic', upcoming = false }: ApexPitchProps) {
+  const { width: screenW } = useWindowDimensions();
+  const [pitch, setPitch] = useState({ w: 0, h: 0 });
   const grassColor = pitchStyle === 'flat' ? '#1FA257' : '#1FA65B';
+  const slotW = Math.min(SLOT_MAX, Math.max(SLOT_MIN, (screenW - SIDE_CHROME) / MAX_ROW));
+  const avatarSize = Math.round(slotW * AVATAR_RATIO);
+  const wrapperSize = Math.round(slotW * WRAPPER_RATIO);
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (width !== pitch.w || height !== pitch.h) setPitch({ w: width, h: height });
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: grassColor }]}>
-      <ApexPitchMarks />
+    <View
+      style={[styles.container, { backgroundColor: grassColor }]}
+      onLayout={onLayout}
+    >
+      <ApexPitchMarks width={pitch.w} height={pitch.h} />
       <View style={styles.rows}>
         {rows.map((row, i) => (
           <View key={i} style={styles.row}>
             {row.map((p) => (
-              <ApexPitchPlayerCard key={p.name} p={p} upcoming={upcoming} />
+              <ApexPitchPlayerCard
+                key={p.name}
+                p={p}
+                upcoming={upcoming}
+                slotW={slotW}
+                avatarSize={avatarSize}
+                wrapperSize={wrapperSize}
+              />
             ))}
           </View>
         ))}
@@ -37,18 +68,31 @@ export function ApexPitch({ rows, pitchStyle = 'realistic', upcoming = false }: 
   );
 }
 
-function ApexPitchPlayerCard({ p, upcoming }: { p: PitchPlayer; upcoming: boolean }) {
+interface PlayerCardProps {
+  p: PitchPlayer;
+  upcoming: boolean;
+  slotW: number;
+  avatarSize: number;
+  wrapperSize: number;
+}
+
+function ApexPitchPlayerCard({ p, upcoming, slotW, avatarSize, wrapperSize }: PlayerCardProps) {
   return (
-    <View style={styles.playerContainer}>
-      <View style={styles.avatarWrapper}>
-        <AvatarDisc size={46} player={p} />
+    <View style={[styles.playerContainer, { width: slotW }]}>
+      <View style={[styles.avatarWrapper, { width: wrapperSize, height: wrapperSize }]}>
+        <AvatarDisc size={avatarSize} player={p} />
         {p.capt && <CaptBadge />}
         {!upcoming && p.cards && p.cards.length > 0 && <CardIcons cards={p.cards} />}
         {!upcoming && p.ball && <BallBadge />}
         {!upcoming && p.sub != null && <SubPill min={p.sub} />}
         {!upcoming && p.subIn != null && <SubInPill min={p.subIn} />}
       </View>
-      <PointPill pts={upcoming ? undefined : p.pts} name={p.name} upcoming={upcoming} />
+      <PointPill
+        pts={upcoming ? undefined : p.pts}
+        name={p.name}
+        upcoming={upcoming}
+        maxWidth={slotW}
+      />
     </View>
   );
 }
@@ -76,11 +120,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 7,
-    width: 90,
   },
   avatarWrapper: {
     position: 'relative',
-    width: 54,
-    height: 54,
   },
 });

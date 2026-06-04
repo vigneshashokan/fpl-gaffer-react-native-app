@@ -5,13 +5,14 @@ interface PointPillProps {
   pts?: number | null;
   name: string;
   upcoming?: boolean;
+  maxWidth?: number;
 }
 
-export function PointPill({ pts, name, upcoming = false }: PointPillProps) {
+export function PointPill({ pts, name, upcoming = false, maxWidth = 96 }: PointPillProps) {
   const played = pts != null;
   const numBg = played ? '#7B09E5' : 'rgba(255,255,255,0.22)';
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { maxWidth }]}>
       {!upcoming && (
         <View style={[styles.num, { backgroundColor: numBg }]}>
           <Text style={styles.numText}>{played ? String(pts) : '–'}</Text>
@@ -29,7 +30,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    maxWidth: 96,
     backgroundColor: 'rgb(19,27,46)',
     borderRadius: 999,
     paddingVertical: 3,

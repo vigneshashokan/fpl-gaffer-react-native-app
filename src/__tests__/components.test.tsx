@@ -242,7 +242,7 @@ describe('PitchMarks', () => {
 // ── ApexPitchMarks ────────────────────────────────────────────
 describe('ApexPitchMarks', () => {
   it('renders without crashing', () => {
-    const { toJSON } = render(<ApexPitchMarks />);
+    const { toJSON } = render(<ApexPitchMarks width={350} height={400} />);
     expect(toJSON()).toBeTruthy();
   });
 });
