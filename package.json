@@ -35,6 +35,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@react-native/jest-preset": "^0.85.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
@@ -49,7 +51,10 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "testMatch": ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx"],
+    "testMatch": [
+      "**/__tests__/**/*.test.ts",
+      "**/__tests__/**/*.test.tsx"
+    ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
       "^@/assets/(.*)$": "<rootDir>/assets/$1"
