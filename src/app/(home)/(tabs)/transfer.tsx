@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
@@ -10,6 +10,7 @@ import { DeadlineBanner } from '@/components/transfer/DeadlineBanner';
 import { ChipsRow } from '@/components/transfer/ChipsRow';
 import { TransferPitch } from '@/components/transfer/TransferPitch';
 import { TransferSuggestionsCard } from '@/components/transfer/TransferSuggestionsCard';
+import { ApplyAllCard } from '@/components/team/ApplyAllCard';
 
 export default function TransferTab() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function TransferTab() {
   const t = getTheme(paletteKey, dark);
   const tk = apexTokens(dark, paletteKey);
   const tr = APEX_TEAM.transfer;
+
+  const [pendingTransfers, setPendingTransfers] = useState<Record<string, boolean>>({});
+  const pendingCount = Object.values(pendingTransfers).filter(Boolean).length;
 
   const heroFrom = t.primary;
   const heroTo = dark ? '#0C1018' : '#5B0F63';
@@ -28,45 +32,79 @@ export default function TransferTab() {
     });
   };
 
+  const toggleTransfer = (id: string) =>
+    setPendingTransfers((s) => ({ ...s, [id]: !s[id] }));
+
+  const toggleAllTransfers = (next: boolean) => {
+    const all: Record<string, boolean> = {};
+    if (next) tr.transferSuggestions.forEach((s) => (all[s.id] = true));
+    setPendingTransfers(all);
+  };
+
+  const undo = () => setPendingTransfers({});
+  const confirm = () => setPendingTransfers({});
+
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: tk.bg }}
-      contentContainerStyle={{ paddingBottom: 32 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.topGroup}>
-        <DeadlineBanner nextGw={tr.nextGw} deadline={tr.deadline} tk={tk} />
-        <TransferInfoCard
-          teamName={APEX_TEAM.teamName}
-          nextGw={tr.nextGw}
-          squadValue={tr.squadValue}
-          freeTransfers={tr.freeTransfers}
-          inBank={tr.inBank}
-          gradFrom={heroFrom}
-          gradTo={heroTo}
-        />
-      </View>
+    <View style={{ flex: 1, backgroundColor: tk.bg }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          { paddingBottom: 32 },
+          pendingCount > 0 && { paddingBottom: 140 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.topGroup}>
+          <DeadlineBanner nextGw={tr.nextGw} deadline={tr.deadline} tk={tk} />
+          <TransferInfoCard
+            teamName={APEX_TEAM.teamName}
+            nextGw={tr.nextGw}
+            squadValue={tr.squadValue}
+            freeTransfers={tr.freeTransfers}
+            inBank={tr.inBank}
+            gradFrom={heroFrom}
+            gradTo={heroTo}
+          />
+        </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: tk.faint }]}>Play a Chip</Text>
-      </View>
-      <ChipsRow chips={tr.chips} tk={tk} />
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: tk.faint }]}>Play a Chip</Text>
+        </View>
+        <ChipsRow chips={tr.chips} tk={tk} />
 
-      <View style={styles.pitchWrap}>
-        <TransferPitch
-          rows={tr.pitch}
-          pitchStyle={pitchStyle}
-          onPlayerPress={openPlayer}
-        />
-        <Text style={[styles.hint, { color: tk.faint }]}>
-          Tap on any player to see transfer targets
-        </Text>
-      </View>
+        <View style={styles.pitchWrap}>
+          <TransferPitch
+            rows={tr.pitch}
+            pitchStyle={pitchStyle}
+            onPlayerPress={openPlayer}
+          />
+          <Text style={[styles.hint, { color: tk.faint }]}>
+            Tap on any player to see transfer targets
+          </Text>
+        </View>
 
-      <View style={styles.suggestionsWrap}>
-        <TransferSuggestionsCard suggestions={tr.transferSuggestions} tk={tk} />
-      </View>
-    </ScrollView>
+        <View style={styles.suggestionsWrap}>
+          <TransferSuggestionsCard
+            suggestions={tr.transferSuggestions}
+            tk={tk}
+            applied={pendingTransfers}
+            onToggle={toggleTransfer}
+            onToggleAll={toggleAllTransfers}
+          />
+        </View>
+      </ScrollView>
+
+      {pendingCount > 0 && (
+        <View style={styles.applyWrap}>
+          <ApplyAllCard
+            count={pendingCount}
+            tk={tk}
+            onUndo={undo}
+            onConfirm={confirm}
+          />
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -101,5 +139,12 @@ const styles = StyleSheet.create({
   suggestionsWrap: {
     paddingHorizontal: 16,
     paddingTop: 6,
+  },
+  applyWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 24,
+    zIndex: 20,
   },
 });
