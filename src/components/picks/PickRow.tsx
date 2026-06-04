@@ -22,7 +22,6 @@ export function PickRow({ p, zebra, last, tk, dark }: PickRowProps) {
   const owned = SQUAD_NAMES.has(p.name);
   const xp = xPtsOf(p);
   const xpC = xpColor(xp, dark);
-  const accentBar = dark ? '#A78BFA' : '#7C3AED';
   const jersey = jerseyFor(p.name);
 
   return (
@@ -39,12 +38,6 @@ export function PickRow({ p, zebra, last, tk, dark }: PickRowProps) {
     >
       {/* Player cell */}
       <View style={styles.playerCell}>
-        <View
-          style={[
-            styles.accentBar,
-            { backgroundColor: accentBar, opacity: owned ? 1 : 0.22 },
-          ]}
-        />
         {jersey && (
           <Image source={jersey} style={styles.jersey} resizeMode="contain" />
         )}
@@ -95,12 +88,6 @@ const styles = StyleSheet.create({
     paddingLeft: 11,
     paddingRight: 10,
     gap: 6,
-  },
-  accentBar: {
-    width: 4,
-    height: 36,
-    borderRadius: 3,
-    marginRight: 4,
   },
   jersey: {
     width: 40,
