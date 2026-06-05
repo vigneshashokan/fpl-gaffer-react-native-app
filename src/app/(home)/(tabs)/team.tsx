@@ -77,10 +77,8 @@ export default function TeamTab() {
 
   const activeChip = at.transfer.chips.find((c) => c.playedGw === gw);
 
-  const pageBg = gwState === 'past' ? (dark ? '#0F1525' : '#E7E9F2') : t.bg;
-
   return (
-    <View style={{ flex: 1, backgroundColor: pageBg }}>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[

@@ -27,7 +27,8 @@ export function GwNavBar({
       return { bg: tk.greenSoft, fg: tk.green, dotBg: tk.green };
     if (state === 'upcoming')
       return { bg: tk.yellowSoft, fg: tk.yellow, dotBg: tk.yellow };
-    return { bg: tk.headStrip, fg: tk.faint, dotBg: null as string | null };
+    const pastBg = tk.dark ? '#1E2434' : '#E7E9F2';
+    return { bg: pastBg, fg: tk.faint, dotBg: null as string | null };
   })();
 
   return (
