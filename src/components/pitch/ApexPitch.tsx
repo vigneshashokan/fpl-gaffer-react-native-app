@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, useWindowDimensions, LayoutChangeEvent } from 'react-native';
+import {
+  View,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  LayoutChangeEvent,
+} from 'react-native';
 import { ApexPitchMarks } from './ApexPitchMarks';
 import { AvatarDisc } from '@/components/ui/AvatarDisc';
 import { PointPill } from '@/components/ui/PointPill';
@@ -16,6 +22,7 @@ interface ApexPitchProps {
   rows: PitchPlayer[][];
   pitchStyle?: 'realistic' | 'flat';
   upcoming?: boolean;
+  onPlayerPress?: (p: PitchPlayer) => void;
 }
 
 // FPL formations can stack up to 5 outfielders in a row (e.g. 5 MID in 3-5-2).
@@ -29,7 +36,12 @@ const SLOT_MAX = 90;
 const AVATAR_RATIO = 0.51;
 const WRAPPER_RATIO = 0.6;
 
-export function ApexPitch({ rows, pitchStyle = 'realistic', upcoming = false }: ApexPitchProps) {
+export function ApexPitch({
+  rows,
+  pitchStyle = 'realistic',
+  upcoming = false,
+  onPlayerPress,
+}: ApexPitchProps) {
   const { width: screenW } = useWindowDimensions();
   const [pitch, setPitch] = useState({ w: 0, h: 0 });
   const grassColor = pitchStyle === 'flat' ? '#1FA257' : '#1FA65B';
@@ -59,6 +71,7 @@ export function ApexPitch({ rows, pitchStyle = 'realistic', upcoming = false }: 
                 slotW={slotW}
                 avatarSize={avatarSize}
                 wrapperSize={wrapperSize}
+                onPress={onPlayerPress}
               />
             ))}
           </View>
@@ -74,11 +87,19 @@ interface PlayerCardProps {
   slotW: number;
   avatarSize: number;
   wrapperSize: number;
+  onPress?: (p: PitchPlayer) => void;
 }
 
-function ApexPitchPlayerCard({ p, upcoming, slotW, avatarSize, wrapperSize }: PlayerCardProps) {
-  return (
-    <View style={[styles.playerContainer, { width: slotW }]}>
+function ApexPitchPlayerCard({
+  p,
+  upcoming,
+  slotW,
+  avatarSize,
+  wrapperSize,
+  onPress,
+}: PlayerCardProps) {
+  const body = (
+    <>
       <View style={[styles.avatarWrapper, { width: wrapperSize, height: wrapperSize }]}>
         <AvatarDisc size={avatarSize} player={p} />
         {p.capt && <CaptBadge />}
@@ -93,7 +114,23 @@ function ApexPitchPlayerCard({ p, upcoming, slotW, avatarSize, wrapperSize }: Pl
         upcoming={upcoming}
         maxWidth={slotW}
       />
-    </View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={[styles.playerContainer, { width: slotW }]}>{body}</View>;
+  }
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.playerContainer,
+        { width: slotW },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
+      ]}
+      onPress={() => onPress(p)}
+    >
+      {body}
+    </Pressable>
   );
 }
 

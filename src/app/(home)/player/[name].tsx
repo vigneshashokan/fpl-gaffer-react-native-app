@@ -10,7 +10,8 @@ import { Icon } from '@/components/ui/Icon';
 
 export default function PlayerDetailModal() {
   const router = useRouter();
-  const { name } = useLocalSearchParams<{ name: string }>();
+  const { name, from } = useLocalSearchParams<{ name: string; from?: string }>();
+  const showTransferSuggestions = from !== 'team';
   const { paletteKey, dark } = useThemeStore();
   const t = getTheme(paletteKey, dark);
   const tk = apexTokens(dark, paletteKey);
@@ -60,9 +61,11 @@ export default function PlayerDetailModal() {
         <Stat label="Ownership"  value={`${player.own}%`}           tk={tk} />
       </View>
 
-      <Text style={[styles.placeholderNote, { color: tk.faint }]}>
-        Transfer-target suggestions coming in a follow-up.
-      </Text>
+      {showTransferSuggestions && (
+        <Text style={[styles.placeholderNote, { color: tk.faint }]}>
+          Transfer-target suggestions coming in a follow-up.
+        </Text>
+      )}
     </ScrollView>
   );
 }
