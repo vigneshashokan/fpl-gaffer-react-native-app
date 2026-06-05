@@ -1,3 +1,12 @@
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
+}));
+
 describe('supabase client singleton', () => {
   beforeEach(() => {
     jest.resetModules();
@@ -7,9 +16,6 @@ describe('supabase client singleton', () => {
     jest.doMock('expo-constants', () => ({
       __esModule: true,
       default: { expoConfig: { extra: {} } },
-    }));
-    jest.doMock('@supabase/supabase-js', () => ({
-      createClient: jest.fn(() => ({})),
     }));
 
     expect(() => require('@/lib/supabase')).toThrow(/Missing EXPO_PUBLIC_SUPABASE_/);
@@ -32,6 +38,32 @@ describe('supabase client singleton', () => {
 
     const mod = require('@/lib/supabase');
     expect(mod.supabase).toBeDefined();
-    expect(createClient).toHaveBeenCalledWith('https://test.supabase.co', 'test-anon-key');
+    expect(createClient).toHaveBeenCalledWith(
+      'https://test.supabase.co',
+      'test-anon-key',
+      expect.objectContaining({
+        auth: expect.objectContaining({
+          storage: expect.anything(),
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+        }),
+      }),
+    );
+  });
+
+  it('throws when only one env var is present', () => {
+    jest.doMock('expo-constants', () => ({
+      __esModule: true,
+      default: {
+        expoConfig: {
+          extra: {
+            supabaseUrl: 'https://test.supabase.co',
+            // supabaseAnonKey intentionally missing
+          },
+        },
+      },
+    }));
+    expect(() => require('@/lib/supabase')).toThrow(/Missing EXPO_PUBLIC_SUPABASE_/);
   });
 });
