@@ -69,7 +69,10 @@ function NavBtn({
       onPress={onPress}
       style={[
         styles.btn,
-        { borderColor: tk.cardBorder, opacity: disabled ? 0.35 : 1 },
+        {
+          borderColor: tk.dark ? 'rgba(255,255,255,0.22)' : '#C4C8D2',
+          opacity: disabled ? 0.35 : 1,
+        },
       ]}
     >
       <Icon name={dir === 'l' ? 'chevL' : 'chevR'} color={tk.variant} size={22} />
