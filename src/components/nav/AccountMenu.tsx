@@ -46,14 +46,40 @@ export function AccountMenu({
           </View>
         </View>
 
-        <Pressable style={[styles.row, styles.toggleRow]} onPress={() => setDark(!dark)}>
-          <Text style={[styles.rowText, { color: t.text }]}>
-            {dark ? 'Dark mode' : 'Light mode'}
-          </Text>
-          <View style={[styles.toggle, { backgroundColor: dark ? tk.activeFill : t.line }]}>
-            <View style={[styles.knob, { left: dark ? 20 : 2 }]} />
-          </View>
-        </Pressable>
+        <View
+          style={[
+            styles.segmentedRow,
+            { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : '#E7E9F2' },
+          ]}
+        >
+          {(['light', 'dark'] as const).map((mode) => {
+            const active = mode === 'dark' ? dark : !dark;
+            return (
+              <Pressable
+                key={mode}
+                onPress={() => setDark(mode === 'dark')}
+                style={[
+                  styles.segment,
+                  active && [
+                    styles.segmentActive,
+                    { backgroundColor: dark ? '#2D3247' : '#FFFFFF' },
+                  ],
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    active
+                      ? { color: t.text, fontFamily: 'Archivo_800ExtraBold' }
+                      : { color: t.textMuted },
+                  ]}
+                >
+                  {mode === 'dark' ? 'Dark' : 'Light'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <View style={[styles.divider, { backgroundColor: t.line }]} />
         <Pressable style={styles.row} onPress={onProfile}>
@@ -116,24 +142,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  toggleRow: { justifyContent: 'space-between' },
   rowText: {
     fontFamily: 'Archivo_600SemiBold',
     fontSize: 14.5,
   },
   divider: { height: 1 },
-  toggle: {
-    width: 42,
-    height: 24,
-    borderRadius: 12,
-    position: 'relative',
-  },
-  knob: {
-    position: 'absolute',
-    top: 2,
-    width: 20,
-    height: 20,
+  segmentedRow: {
+    flexDirection: 'row',
+    marginHorizontal: 12,
+    marginVertical: 10,
+    padding: 3,
     borderRadius: 10,
-    backgroundColor: '#fff',
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 7,
+  },
+  segmentActive: {
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  segmentText: {
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 14,
   },
 });
