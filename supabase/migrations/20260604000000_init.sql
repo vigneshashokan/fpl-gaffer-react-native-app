@@ -15,3 +15,8 @@ create policy "health read for anon"
   on public.health
   for select
   using (true);
+
+-- PostgREST exposure: Supabase's `auto_expose_new_tables` default flipped to
+-- false on 2026-05-30, so we explicitly grant SELECT to the anon role here.
+-- All future migrations should grant the roles they need explicitly.
+grant select on public.health to anon;
