@@ -162,15 +162,14 @@ No DELETE policy on `profiles` or `notification_prefs`. Account deletion (#19) c
 
 ## Indexes
 
-Two explicit indexes; everything else uses the primary-key index.
+One explicit index; everything else uses an index implied by another constraint.
 
 ```sql
-create index push_tokens_user_id_idx on public.push_tokens (user_id);
 create index push_tokens_last_seen_at_idx on public.push_tokens (last_seen_at);
 ```
 
-- `push_tokens(user_id)`: the push-send job (#37) reads "all tokens for user X" on every notification fan-out.
 - `push_tokens(last_seen_at)`: the stale-token cleanup job filters by this; small table so it's cheap insurance.
+- `push_tokens(user_id)` — **not** declared explicitly. The `unique (user_id, token)` constraint creates a B-tree index on `(user_id, token)`, and Postgres can satisfy `user_id`-only queries (e.g. the push-send fan-out in #37) using that composite index's leading column. A separate `(user_id)` index would be redundant write overhead.
 
 Nothing on `profiles.fpl_team_id` — we don't currently query "find all users watching team X." If a future analytics use case appears, the index is a one-line follow-up.
 
@@ -220,7 +219,7 @@ Outline:
 | Criterion (from #11) | Where satisfied |
 |---|---|
 | Migrations checked into repo and reproducible | Single migration file under `supabase/migrations/`, applied via `supabase db push` (CI from #10). |
-| Foreign keys + indexes on hot paths | FKs on every table; explicit indexes on `push_tokens(user_id)` and `push_tokens(last_seen_at)`. PK indexes elsewhere. (The original AC mentioned `team_id+gw` — moot now that `squads`/`transfers` are dropped.) |
+| Foreign keys + indexes on hot paths | FKs on every table; explicit index on `push_tokens(last_seen_at)`. `push_tokens(user_id)` is covered by the `unique (user_id, token)` constraint's index, not a separate declaration. PK indexes elsewhere. (The original AC mentioned `team_id+gw` — moot now that `squads`/`transfers` are dropped.) |
 | Seed script for local dev | `supabase/seed.sql` exists with a comment explaining why it's empty and where test data comes from. |
 | Document schema in `docs/schema.md` | New file written per the outline above. |
 
