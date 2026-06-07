@@ -15,6 +15,9 @@
 ----------------------------------------------------------------------
 drop table if exists public.health;
 
+-- Note: `updated_at` columns are app-maintained (app sets `updated_at = now()`
+-- on every UPDATE). We deliberately omit a Postgres trigger for MVP simplicity.
+
 ----------------------------------------------------------------------
 -- profiles
 ----------------------------------------------------------------------
@@ -26,6 +29,9 @@ create table public.profiles (
   fpl_team_id  integer,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
+  -- COPPA: user must be 13+ at signup. The check uses current_date so it's
+  -- evaluated at each write, but since dob is immutable post-signup and users
+  -- only get older, a row that passes at INSERT always passes later UPDATEs.
   constraint profiles_dob_coppa check (dob <= current_date - interval '13 years')
 );
 
@@ -96,5 +102,4 @@ create policy "push_tokens: own rows delete" on public.push_tokens
 
 grant select, insert, update, delete on public.push_tokens to authenticated;
 
-create index push_tokens_user_id_idx       on public.push_tokens (user_id);
 create index push_tokens_last_seen_at_idx  on public.push_tokens (last_seen_at);
