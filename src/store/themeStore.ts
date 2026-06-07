@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PaletteKey } from '@/constants/theme';
 
 interface ThemeState {
@@ -10,11 +12,24 @@ interface ThemeState {
   setPitchStyle: (style: 'realistic' | 'flat') => void;
 }
 
-export const useThemeStore = create<ThemeState>((set) => ({
-  paletteKey:    'classic',
-  dark:          false,
-  pitchStyle:    'realistic',
-  setPaletteKey: (key)   => set({ paletteKey: key }),
-  setDark:       (dark)  => set({ dark }),
-  setPitchStyle: (style) => set({ pitchStyle: style }),
-}));
+export const useThemeStore = create<ThemeState>()(
+  persist(
+    (set) => ({
+      paletteKey:    'classic',
+      dark:          false,
+      pitchStyle:    'realistic',
+      setPaletteKey: (key)   => set({ paletteKey: key }),
+      setDark:       (dark)  => set({ dark }),
+      setPitchStyle: (style) => set({ pitchStyle: style }),
+    }),
+    {
+      name: 'fpl-gaffer/theme',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (s) => ({
+        paletteKey: s.paletteKey,
+        dark: s.dark,
+        pitchStyle: s.pitchStyle,
+      }),
+    },
+  ),
+);
