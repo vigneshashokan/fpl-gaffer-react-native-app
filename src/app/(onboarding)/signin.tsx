@@ -7,28 +7,41 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
 import { getTheme } from '@/constants/theme';
+import { signInWithGoogle } from '@/lib/auth/google';
 import { GafferLogo } from '@/components/ui/GafferLogo';
 import { PillBtn } from '@/components/ui/PillBtn';
 import { Icon } from '@/components/ui/Icon';
 import { Field } from '@/components/forms/Field';
 import { SocialBtn } from '@/components/forms/SocialBtn';
 
+const COMING_SOON = () =>
+  Alert.alert('Coming soon', 'This sign-in option is in a future update.');
+
 export default function SignIn() {
-  const router = useRouter();
   const { paletteKey, dark } = useThemeStore();
   const t = getTheme(paletteKey, dark);
 
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
-  // Mock handler kept temporarily so the existing buttons compile; replaced
-  // in Task 7 by real Google sign-in + "Coming soon" alerts for the rest.
-  const handleSignIn = () => {
-    router.replace('/(home)/(tabs)/team');
+  const onGoogle = async () => {
+    setGoogleError(null);
+    setGoogleSubmitting(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result.ok) return;
+      if (result.error === 'cancel' || result.error === 'dismiss') return;
+      setGoogleError('Google sign-in failed. Please try again.');
+    } finally {
+      setGoogleSubmitting(false);
+    }
   };
 
   return (
@@ -36,10 +49,7 @@ export default function SignIn() {
       style={{ flex: 1, backgroundColor: t.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.logoWrap}>
           <GafferLogo size={46} light={dark} variant="wordmark" />
         </View>
@@ -50,9 +60,17 @@ export default function SignIn() {
         </Text>
 
         <View style={{ gap: 11 }}>
-          <SocialBtn provider="google" onPress={handleSignIn} />
-          <SocialBtn provider="apple" onPress={handleSignIn} />
+          <SocialBtn provider="google" onPress={onGoogle} />
+          <SocialBtn provider="apple" onPress={COMING_SOON} />
         </View>
+        {googleSubmitting && (
+          <View style={styles.spinnerWrap}>
+            <ActivityIndicator color={t.accent} />
+          </View>
+        )}
+        {googleError && (
+          <Text style={[styles.error, { color: '#FF3B5C' }]}>{googleError}</Text>
+        )}
 
         <View style={styles.divider}>
           <View style={[styles.dividerLine, { backgroundColor: t.line }]} />
@@ -90,14 +108,14 @@ export default function SignIn() {
         </View>
 
         <View style={styles.forgotWrap}>
-          <Pressable onPress={() => {}} hitSlop={8}>
+          <Pressable onPress={COMING_SOON} hitSlop={8}>
             <Text style={[styles.forgot, { color: t.accent }]}>Forgot password?</Text>
           </Pressable>
         </View>
 
         <PillBtn
           variant="accent"
-          onPress={handleSignIn}
+          onPress={COMING_SOON}
           accentInk={t.accentInk}
           style={styles.signInBtn}
         >
@@ -106,7 +124,7 @@ export default function SignIn() {
 
         <View style={styles.faceWrap}>
           <Pressable
-            onPress={handleSignIn}
+            onPress={COMING_SOON}
             style={({ pressed }) => [
               styles.faceBtn,
               { backgroundColor: t.surfaceAlt, borderColor: t.line },
@@ -146,6 +164,16 @@ const styles = StyleSheet.create({
     fontSize: 15.5,
     textAlign: 'center',
     marginBottom: 26,
+  },
+  spinnerWrap: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  error: {
+    marginTop: 8,
+    textAlign: 'center',
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 13,
   },
   divider: {
     flexDirection: 'row',

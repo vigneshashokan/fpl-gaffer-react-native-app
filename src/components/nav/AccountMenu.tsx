@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
+import { useAuthStore } from '@/store/authStore';
 import { getTheme } from '@/constants/theme';
 import { apexTokens } from '@/constants/apexTokens';
 import { Icon } from '@/components/ui/Icon';
@@ -92,7 +93,13 @@ export function AccountMenu({
           <Text style={[styles.rowText, { color: t.text }]}>Settings</Text>
         </Pressable>
         <View style={[styles.divider, { backgroundColor: t.line }]} />
-        <Pressable style={styles.row} onPress={onSignOut}>
+        <Pressable
+          style={styles.row}
+          onPress={async () => {
+            await useAuthStore.getState().signOut();
+            onSignOut();
+          }}
+        >
           <Icon name="signOut" color="#FF3B5C" size={18} />
           <Text style={[styles.rowText, { color: '#FF3B5C' }]}>Sign out</Text>
         </Pressable>
