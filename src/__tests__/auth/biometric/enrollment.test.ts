@@ -3,6 +3,8 @@ const mockPromptBiometric = jest.fn();
 const mockGetSession = jest.fn();
 const mockSaveSession = jest.fn();
 const mockSetItem = jest.fn();
+const mockClearSession = jest.fn();
+const mockRemoveItem = jest.fn();
 
 jest.mock('@/lib/auth/biometric/capability', () => ({
   __esModule: true,
@@ -13,6 +15,7 @@ jest.mock('@/lib/auth/biometric/capability', () => ({
 jest.mock('@/lib/auth/biometric/storage', () => ({
   __esModule: true,
   saveSession: (s: unknown) => mockSaveSession(s),
+  clearSession: () => mockClearSession(),
 }));
 
 jest.mock('@/lib/supabase', () => ({
@@ -28,10 +31,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
     setItem: (k: string, v: string) => mockSetItem(k, v),
+    removeItem: (k: string) => mockRemoveItem(k),
   },
 }));
 
-import { enable } from '@/lib/auth/biometric/enrollment';
+import { enable, disable } from '@/lib/auth/biometric/enrollment';
 
 describe('enable', () => {
   beforeEach(() => {
@@ -102,5 +106,32 @@ describe('enable', () => {
     mockPromptBiometric.mockResolvedValueOnce({ ok: false, error: 'cancel' });
     await enable();
     expect(mockPromptBiometric).toHaveBeenCalledWith('Confirm Face ID to enable');
+  });
+});
+
+describe('disable', () => {
+  beforeEach(() => {
+    mockClearSession.mockReset();
+    mockRemoveItem.mockReset();
+  });
+
+  it('clears SecureStore and removes the AsyncStorage flag', async () => {
+    mockClearSession.mockResolvedValueOnce(undefined);
+    mockRemoveItem.mockResolvedValueOnce(undefined);
+    await disable();
+    expect(mockClearSession).toHaveBeenCalled();
+    expect(mockRemoveItem).toHaveBeenCalledWith('biometric_enabled');
+  });
+
+  it('resolves even if clearSession rejects', async () => {
+    mockClearSession.mockRejectedValueOnce(new Error('boom'));
+    mockRemoveItem.mockResolvedValueOnce(undefined);
+    await expect(disable()).resolves.toBeUndefined();
+  });
+
+  it('resolves even if AsyncStorage.removeItem rejects', async () => {
+    mockClearSession.mockResolvedValueOnce(undefined);
+    mockRemoveItem.mockRejectedValueOnce(new Error('boom'));
+    await expect(disable()).resolves.toBeUndefined();
   });
 });

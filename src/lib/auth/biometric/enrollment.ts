@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { isSupported, promptBiometric } from '@/lib/auth/biometric/capability';
-import { saveSession } from '@/lib/auth/biometric/storage';
+import { saveSession, clearSession } from '@/lib/auth/biometric/storage';
 
 export type BiometricErrorKind =
   | 'cancel'
@@ -37,4 +37,17 @@ export async function enable(): Promise<Result> {
   });
   await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
   return { ok: true, value: undefined };
+}
+
+export async function disable(): Promise<void> {
+  try {
+    await clearSession();
+  } catch {
+    /* swallow */
+  }
+  try {
+    await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
+  } catch {
+    /* swallow */
+  }
 }
