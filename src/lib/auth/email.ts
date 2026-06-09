@@ -41,3 +41,25 @@ export async function signInWithEmail(email: string, password: string): Promise<
     return { ok: false, error: classifyThrown(err) };
   }
 }
+
+export async function signUpWithEmail(args: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}): Promise<Result> {
+  try {
+    const { error } = await supabase.auth.signUp({
+      email: args.email,
+      password: args.password,
+      options: {
+        data: { given_name: args.firstName, family_name: args.lastName },
+        emailRedirectTo: 'fplgafferreactnativeapp://verify',
+      },
+    });
+    if (error) return { ok: false, error: classify(error) };
+    return { ok: true, value: undefined };
+  } catch (err) {
+    return { ok: false, error: classifyThrown(err) };
+  }
+}

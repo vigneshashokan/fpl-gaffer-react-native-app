@@ -1,14 +1,16 @@
 const mockSignInWithPassword = jest.fn();
+const mockSignUp = jest.fn();
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       signInWithPassword: (args: unknown) => mockSignInWithPassword(args),
+      signUp: (args: unknown) => mockSignUp(args),
     },
   },
 }));
 
-import { signInWithEmail } from '@/lib/auth/email';
+import { signInWithEmail, signUpWithEmail } from '@/lib/auth/email';
 
 describe('signInWithEmail', () => {
   beforeEach(() => {
@@ -67,5 +69,60 @@ describe('signInWithEmail', () => {
     const r = await signInWithEmail('a@b.co', 'Secret123');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe('unknown');
+  });
+});
+
+describe('signUpWithEmail', () => {
+  beforeEach(() => {
+    mockSignUp.mockReset();
+  });
+
+  it('calls supabase with email, password, given_name+family_name metadata, and emailRedirectTo', async () => {
+    mockSignUp.mockResolvedValueOnce({ data: { user: { id: 'u1' } }, error: null });
+    const r = await signUpWithEmail({
+      email: 'ada@example.com',
+      password: 'Strong1Pass',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+    });
+    expect(mockSignUp).toHaveBeenCalledWith({
+      email: 'ada@example.com',
+      password: 'Strong1Pass',
+      options: {
+        data: { given_name: 'Ada', family_name: 'Lovelace' },
+        emailRedirectTo: 'fplgafferreactnativeapp://verify',
+      },
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('maps user_already_exists', async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'user_already_exists', message: 'User already registered' },
+    });
+    const r = await signUpWithEmail({
+      email: 'a@b.co',
+      password: 'Strong1Pass',
+      firstName: 'A',
+      lastName: 'B',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('user_already_exists');
+  });
+
+  it('maps weak_password', async () => {
+    mockSignUp.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'weak_password', message: 'Password too weak' },
+    });
+    const r = await signUpWithEmail({
+      email: 'a@b.co',
+      password: 'Strong1Pass',
+      firstName: 'A',
+      lastName: 'B',
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('weak_password');
   });
 });
