@@ -12,6 +12,7 @@ interface FieldProps {
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
   autoComplete?: 'email' | 'password';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   surfaceAlt: string;
   line: string;
   accent: string;
@@ -27,6 +28,7 @@ export function Field({
   secureTextEntry,
   keyboardType,
   autoComplete,
+  autoCapitalize = 'none',
   surfaceAlt,
   line,
   accent,
@@ -52,7 +54,7 @@ export function Field({
         secureTextEntry={hidden}
         keyboardType={keyboardType}
         autoComplete={autoComplete}
-        autoCapitalize="none"
+        autoCapitalize={autoCapitalize}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={[styles.input, { color: text }]}

@@ -114,6 +114,7 @@ export default function SignUp() {
             placeholder="First name"
             value={firstName}
             onChangeText={setFirstName}
+            autoCapitalize="words"
             surfaceAlt={t.surfaceAlt}
             line={t.line}
             accent={t.accent}
@@ -128,6 +129,7 @@ export default function SignUp() {
             placeholder="Last name"
             value={lastName}
             onChangeText={setLastName}
+            autoCapitalize="words"
             surfaceAlt={t.surfaceAlt}
             line={t.line}
             accent={t.accent}

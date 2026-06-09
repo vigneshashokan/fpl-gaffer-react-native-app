@@ -105,6 +105,19 @@ describe('SignUp screen', () => {
     expect(mockBack).toHaveBeenCalled();
   });
 
+  it('auto-capitalizes words on first and last name fields', () => {
+    const { getByPlaceholderText } = render(<SignUp />);
+    expect(getByPlaceholderText('First name').props.autoCapitalize).toBe('words');
+    expect(getByPlaceholderText('Last name').props.autoCapitalize).toBe('words');
+  });
+
+  it('does not auto-capitalize email or password fields', () => {
+    const { getByPlaceholderText } = render(<SignUp />);
+    expect(getByPlaceholderText('Email address').props.autoCapitalize).toBe('none');
+    expect(getByPlaceholderText('Password').props.autoCapitalize).toBe('none');
+    expect(getByPlaceholderText('Confirm password').props.autoCapitalize).toBe('none');
+  });
+
   it('clears the form fields when navigating back to sign-in', () => {
     const { getByPlaceholderText, getByText } = render(<SignUp />);
     fireEvent.changeText(getByPlaceholderText('First name'), 'Ada');
