@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { isSupported, promptBiometric } from '@/lib/auth/biometric/capability';
-import { saveSession, clearSession } from '@/lib/auth/biometric/storage';
+import { saveSession, loadSession, clearSession } from '@/lib/auth/biometric/storage';
 
 export type BiometricErrorKind =
   | 'cancel'
@@ -49,5 +49,31 @@ export async function disable(): Promise<void> {
     await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
   } catch {
     /* swallow */
+  }
+}
+
+export async function attemptUnlock(): Promise<Result> {
+  const stored = await loadSession();
+  if (!stored) return { ok: false, error: 'no_session' };
+
+  const prompt = await promptBiometric('Unlock FPL Gaffer with Face ID');
+  if (!prompt.ok) {
+    if (prompt.error === 'lockout') return { ok: false, error: 'lockout' };
+    return { ok: false, error: 'cancel' };
+  }
+
+  try {
+    const { error } = await supabase.auth.setSession({
+      access_token: stored.access_token,
+      refresh_token: stored.refresh_token,
+    });
+    if (error) {
+      await disable();
+      return { ok: false, error: 'expired_link' };
+    }
+    return { ok: true, value: undefined };
+  } catch {
+    await disable();
+    return { ok: false, error: 'expired_link' };
   }
 }

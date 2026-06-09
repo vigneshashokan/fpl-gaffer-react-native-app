@@ -5,6 +5,8 @@ const mockSaveSession = jest.fn();
 const mockSetItem = jest.fn();
 const mockClearSession = jest.fn();
 const mockRemoveItem = jest.fn();
+const mockLoadSession = jest.fn();
+const mockSetSession = jest.fn();
 
 jest.mock('@/lib/auth/biometric/capability', () => ({
   __esModule: true,
@@ -16,6 +18,7 @@ jest.mock('@/lib/auth/biometric/storage', () => ({
   __esModule: true,
   saveSession: (s: unknown) => mockSaveSession(s),
   clearSession: () => mockClearSession(),
+  loadSession: () => mockLoadSession(),
 }));
 
 jest.mock('@/lib/supabase', () => ({
@@ -23,6 +26,7 @@ jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: () => mockGetSession(),
+      setSession: (args: unknown) => mockSetSession(args),
     },
   },
 }));
@@ -35,7 +39,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-import { enable, disable } from '@/lib/auth/biometric/enrollment';
+import { enable, disable, attemptUnlock } from '@/lib/auth/biometric/enrollment';
 
 describe('enable', () => {
   beforeEach(() => {
@@ -133,5 +137,114 @@ describe('disable', () => {
     mockClearSession.mockResolvedValueOnce(undefined);
     mockRemoveItem.mockRejectedValueOnce(new Error('boom'));
     await expect(disable()).resolves.toBeUndefined();
+  });
+});
+
+describe('attemptUnlock', () => {
+  beforeEach(() => {
+    mockIsSupported.mockReset();
+    mockPromptBiometric.mockReset();
+    mockLoadSession.mockReset();
+    mockSetSession.mockReset();
+    mockClearSession.mockReset();
+    mockRemoveItem.mockReset();
+  });
+
+  it('returns no_session when storage is empty', async () => {
+    mockLoadSession.mockResolvedValueOnce(null);
+    const r = await attemptUnlock();
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('no_session');
+    expect(mockPromptBiometric).not.toHaveBeenCalled();
+  });
+
+  it('passes "Unlock FPL Gaffer with Face ID" as the prompt reason', async () => {
+    mockLoadSession.mockResolvedValueOnce({
+      access_token: 'a',
+      refresh_token: 'r',
+      user_id: 'u1',
+    });
+    mockPromptBiometric.mockResolvedValueOnce({ ok: false, error: 'cancel' });
+    await attemptUnlock();
+    expect(mockPromptBiometric).toHaveBeenCalledWith('Unlock FPL Gaffer with Face ID');
+  });
+
+  it('returns cancel without disabling when user cancels prompt', async () => {
+    mockLoadSession.mockResolvedValueOnce({
+      access_token: 'a',
+      refresh_token: 'r',
+      user_id: 'u1',
+    });
+    mockPromptBiometric.mockResolvedValueOnce({ ok: false, error: 'cancel' });
+    const r = await attemptUnlock();
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('cancel');
+    expect(mockClearSession).not.toHaveBeenCalled();
+    expect(mockRemoveItem).not.toHaveBeenCalled();
+  });
+
+  it('returns lockout without disabling when OS locks out biometric', async () => {
+    mockLoadSession.mockResolvedValueOnce({
+      access_token: 'a',
+      refresh_token: 'r',
+      user_id: 'u1',
+    });
+    mockPromptBiometric.mockResolvedValueOnce({ ok: false, error: 'lockout' });
+    const r = await attemptUnlock();
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('lockout');
+    expect(mockClearSession).not.toHaveBeenCalled();
+  });
+
+  it('calls supabase.setSession with stored tokens on prompt success', async () => {
+    mockLoadSession.mockResolvedValueOnce({
+      access_token: 'aaa',
+      refresh_token: 'rrr',
+      user_id: 'u1',
+    });
+    mockPromptBiometric.mockResolvedValueOnce({ ok: true });
+    mockSetSession.mockResolvedValueOnce({ data: { session: {} }, error: null });
+    const r = await attemptUnlock();
+    expect(mockSetSession).toHaveBeenCalledWith({
+      access_token: 'aaa',
+      refresh_token: 'rrr',
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('disables AND returns expired_link when setSession rejects', async () => {
+    mockLoadSession.mockResolvedValueOnce({
+      access_token: 'aaa',
+      refresh_token: 'rrr',
+      user_id: 'u1',
+    });
+    mockPromptBiometric.mockResolvedValueOnce({ ok: true });
+    mockSetSession.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Invalid refresh token' },
+    });
+    mockClearSession.mockResolvedValueOnce(undefined);
+    mockRemoveItem.mockResolvedValueOnce(undefined);
+    const r = await attemptUnlock();
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('expired_link');
+    expect(mockClearSession).toHaveBeenCalled();
+    expect(mockRemoveItem).toHaveBeenCalledWith('biometric_enabled');
+  });
+
+  it('disables AND returns expired_link when setSession throws', async () => {
+    mockLoadSession.mockResolvedValueOnce({
+      access_token: 'aaa',
+      refresh_token: 'rrr',
+      user_id: 'u1',
+    });
+    mockPromptBiometric.mockResolvedValueOnce({ ok: true });
+    mockSetSession.mockRejectedValueOnce(new Error('boom'));
+    mockClearSession.mockResolvedValueOnce(undefined);
+    mockRemoveItem.mockResolvedValueOnce(undefined);
+    const r = await attemptUnlock();
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('expired_link');
+    expect(mockClearSession).toHaveBeenCalled();
   });
 });
