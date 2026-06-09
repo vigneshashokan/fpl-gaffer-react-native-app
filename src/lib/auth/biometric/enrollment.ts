@@ -77,3 +77,18 @@ export async function attemptUnlock(): Promise<Result> {
     return { ok: false, error: 'expired_link' };
   }
 }
+
+export async function persistCurrentSession(): Promise<void> {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) return;
+    const s = data.session;
+    await saveSession({
+      access_token: s.access_token,
+      refresh_token: s.refresh_token,
+      user_id: s.user.id,
+    });
+  } catch {
+    /* swallow */
+  }
+}

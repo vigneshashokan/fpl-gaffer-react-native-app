@@ -39,7 +39,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-import { enable, disable, attemptUnlock } from '@/lib/auth/biometric/enrollment';
+import {
+  enable,
+  disable,
+  attemptUnlock,
+  persistCurrentSession,
+} from '@/lib/auth/biometric/enrollment';
 
 describe('enable', () => {
   beforeEach(() => {
@@ -246,5 +251,59 @@ describe('attemptUnlock', () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe('expired_link');
     expect(mockClearSession).toHaveBeenCalled();
+  });
+});
+
+describe('persistCurrentSession', () => {
+  beforeEach(() => {
+    mockGetSession.mockReset();
+    mockSaveSession.mockReset();
+  });
+
+  it('writes the current session to storage', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'aaa',
+          refresh_token: 'rrr',
+          user: { id: 'u1' },
+        },
+      },
+      error: null,
+    });
+    mockSaveSession.mockResolvedValueOnce(undefined);
+    await persistCurrentSession();
+    expect(mockSaveSession).toHaveBeenCalledWith({
+      access_token: 'aaa',
+      refresh_token: 'rrr',
+      user_id: 'u1',
+    });
+  });
+
+  it('silently no-ops when there is no active session', async () => {
+    mockGetSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    await persistCurrentSession();
+    expect(mockSaveSession).not.toHaveBeenCalled();
+  });
+
+  it('silently no-ops when getSession rejects', async () => {
+    mockGetSession.mockRejectedValueOnce(new Error('boom'));
+    await expect(persistCurrentSession()).resolves.toBeUndefined();
+    expect(mockSaveSession).not.toHaveBeenCalled();
+  });
+
+  it('silently no-ops when saveSession rejects', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'aaa',
+          refresh_token: 'rrr',
+          user: { id: 'u1' },
+        },
+      },
+      error: null,
+    });
+    mockSaveSession.mockRejectedValueOnce(new Error('boom'));
+    await expect(persistCurrentSession()).resolves.toBeUndefined();
   });
 });
