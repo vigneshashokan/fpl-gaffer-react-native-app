@@ -90,6 +90,31 @@ This document grows over time as new dev-mode-only code lands. **Don't delete en
 
 ---
 
+## Pre-launch UX decisions
+
+Items that aren't dev hacks but need a deliberate decision before the production build ships.
+
+### 9. Google OAuth: force the account picker on every sign-in
+
+- **Current behaviour:** Google's default flow skips the account picker AND consent screen for returning users who have one active Google session and previously consented to the app. Sign-in feels "instant" — tap "Continue with Google", land on home (or `complete-profile`) immediately. No picker.
+- **Desired for production:** Always show Google's account picker so users can deliberately choose which Google account to sign in with (personal vs work, shared device, switching accounts).
+- **Fix:** add `queryParams: { prompt: 'select_account' }` to the OAuth options in `src/lib/auth/google.ts`:
+  ```ts
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
+  ```
+  Optional: `prompt: 'select_account consent'` would also force re-consent (useful if scopes change between releases).
+- **Why deferred:** The auto-flow is good UX for the dev loop. We'll re-evaluate when public launch is closer — by then we'll have user feedback on whether the picker is wanted.
+- **Tracked in:** TBD (single-line change; can land in any pre-launch polish PR).
+
+---
+
 ## Out-of-band Supabase config to mirror in dev → prod transition
 
 When switching to a separate production Supabase project (vs. the current single-project Local + Prod setup from #10):
