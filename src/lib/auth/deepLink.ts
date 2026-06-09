@@ -1,3 +1,9 @@
+import { useEffect } from 'react';
+import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/authStore';
+
 const APP_SCHEME = 'fplgafferreactnativeapp:';
 
 export type AuthDeepLink =
@@ -17,4 +23,38 @@ export function parseAuthDeepLink(url: string): AuthDeepLink {
   } catch {
     return { kind: 'unknown' };
   }
+}
+
+export function useEmailAuthDeepLinks(): void {
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const initialUrl = Linking.useURL();
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const handle = (url: string) => {
+      const parsed = parseAuthDeepLink(url);
+      if (parsed.kind === 'unknown') return;
+      supabase.auth
+        .exchangeCodeForSession(url)
+        .then(() => {
+          if (parsed.kind === 'reset') {
+            router.replace('/(onboarding)/reset-password');
+          }
+          // For 'verify', the existing (onboarding)/_layout.tsx redirect
+          // picks up the new session and routes the user.
+        })
+        .catch(() => {
+          router.replace(
+            parsed.kind === 'reset'
+              ? '/(onboarding)/forgot-password?expired=1'
+              : '/(onboarding)/signin?verify_expired=1',
+          );
+        });
+    };
+
+    if (initialUrl) handle(initialUrl);
+    const sub = Linking.addEventListener('url', (e) => handle(e.url));
+    return () => sub.remove();
+  }, [hydrated, initialUrl]);
 }
