@@ -74,4 +74,30 @@ describe('SignIn screen', () => {
     const { getByText } = render(<SignIn />);
     expect(getByText('Verification link expired. Sign in again to resend.')).toBeTruthy();
   });
+
+  it('shows field errors and does not call signInWithEmail when both fields are empty', () => {
+    const { getByText, queryByText } = render(<SignIn />);
+    fireEvent.press(getByText('Sign in'));
+    expect(queryByText("Email can't be empty")).toBeTruthy();
+    expect(queryByText("Password can't be empty")).toBeTruthy();
+    expect(mockSignIn).not.toHaveBeenCalled();
+  });
+
+  it('shows only password error when email is valid but password is empty', () => {
+    const { getByPlaceholderText, getByText, queryByText } = render(<SignIn />);
+    fireEvent.changeText(getByPlaceholderText('Email address'), 'a@b.co');
+    fireEvent.press(getByText('Sign in'));
+    expect(queryByText("Email can't be empty")).toBeNull();
+    expect(queryByText("Password can't be empty")).toBeTruthy();
+    expect(mockSignIn).not.toHaveBeenCalled();
+  });
+
+  it('shows "Enter a valid email" for malformed email', () => {
+    const { getByPlaceholderText, getByText, queryByText } = render(<SignIn />);
+    fireEvent.changeText(getByPlaceholderText('Email address'), 'not-an-email');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'whatever');
+    fireEvent.press(getByText('Sign in'));
+    expect(queryByText(/valid email/i)).toBeTruthy();
+    expect(mockSignIn).not.toHaveBeenCalled();
+  });
 });

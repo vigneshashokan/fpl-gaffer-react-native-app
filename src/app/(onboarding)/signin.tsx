@@ -16,6 +16,7 @@ import { getTheme } from '@/constants/theme';
 import { signInWithGoogle } from '@/lib/auth/google';
 import { signInWithEmail } from '@/lib/auth/email';
 import type { AuthErrorKind } from '@/lib/auth/email';
+import { emailSchema } from '@/lib/auth/validation';
 import { GafferLogo } from '@/components/ui/GafferLogo';
 import { PillBtn } from '@/components/ui/PillBtn';
 import { Icon } from '@/components/ui/Icon';
@@ -45,6 +46,8 @@ export default function SignIn() {
 
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
@@ -66,13 +69,34 @@ export default function SignIn() {
   const onSubmit = async () => {
     if (submitting) return;
     setSubmitError(null);
+
+    const trimmedEmail = email.trim();
+    let fieldInvalid = false;
+    if (trimmedEmail.length === 0) {
+      setEmailError("Email can't be empty");
+      fieldInvalid = true;
+    } else if (!emailSchema.safeParse(trimmedEmail).success) {
+      setEmailError('Enter a valid email');
+      fieldInvalid = true;
+    } else {
+      setEmailError(null);
+    }
+    if (pw.length === 0) {
+      setPasswordError("Password can't be empty");
+      fieldInvalid = true;
+    } else {
+      setPasswordError(null);
+    }
+    if (fieldInvalid) return;
+
+    const normalisedEmail = trimmedEmail.toLowerCase();
     setSubmitting(true);
     try {
-      const r = await signInWithEmail(email.trim().toLowerCase(), pw);
+      const r = await signInWithEmail(normalisedEmail, pw);
       if (r.ok) return; // (onboarding)/_layout redirects on session change
       if (r.error === 'email_not_confirmed') {
         router.push(
-          `/(onboarding)/verify-pending?email=${encodeURIComponent(email.trim().toLowerCase())}`,
+          `/(onboarding)/verify-pending?email=${encodeURIComponent(normalisedEmail)}`,
         );
         return;
       }
@@ -136,6 +160,9 @@ export default function SignIn() {
             text={t.text}
             textMuted={t.textMuted}
           />
+          {emailError && (
+            <Text style={[styles.fieldError, { color: '#FF3B5C' }]}>{emailError}</Text>
+          )}
           <Field
             icon="lock"
             placeholder="Password"
@@ -149,6 +176,9 @@ export default function SignIn() {
             text={t.text}
             textMuted={t.textMuted}
           />
+          {passwordError && (
+            <Text style={[styles.fieldError, { color: '#FF3B5C' }]}>{passwordError}</Text>
+          )}
         </View>
 
         {submitError && (
@@ -234,6 +264,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Archivo_600SemiBold',
     fontSize: 13,
+  },
+  fieldError: {
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 12.5,
+    marginTop: -4,
+    marginLeft: 4,
   },
   divider: {
     flexDirection: 'row',
