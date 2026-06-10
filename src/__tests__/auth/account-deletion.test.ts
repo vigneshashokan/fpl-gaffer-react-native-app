@@ -2,9 +2,13 @@ const mockGetSession = jest.fn();
 const mockInsert = jest.fn();
 const mockEq = jest.fn();
 const mockDelete = jest.fn(() => ({ eq: mockEq }));
+const mockMaybeSingle = jest.fn();
+const mockSelectEq = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
+const mockSelect = jest.fn(() => ({ eq: mockSelectEq }));
 const mockFrom = jest.fn((_table: string) => ({
   insert: mockInsert,
   delete: () => ({ eq: mockEq }),
+  select: () => mockSelect(),
 }));
 const mockSignOut = jest.fn();
 const mockBiometricDisable = jest.fn();
@@ -27,7 +31,11 @@ jest.mock('@/store/biometricStore', () => ({
   },
 }));
 
-import { requestDeletion, cancelDeletion } from '@/lib/auth/account-deletion';
+import {
+  requestDeletion,
+  cancelDeletion,
+  loadPendingDeletion,
+} from '@/lib/auth/account-deletion';
 
 describe('requestDeletion', () => {
   beforeEach(() => {
@@ -168,5 +176,93 @@ describe('cancelDeletion', () => {
 
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe('network');
+  });
+});
+
+describe('loadPendingDeletion', () => {
+  beforeEach(() => {
+    mockGetSession.mockReset();
+    mockMaybeSingle.mockReset();
+    mockSelectEq.mockReset().mockImplementation(() => ({ maybeSingle: mockMaybeSingle }));
+    mockSelect.mockClear();
+    mockFrom.mockClear();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-10T12:00:00.000Z'));
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns null when there is no active session', async () => {
+    mockGetSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    expect(await loadPendingDeletion()).toBeNull();
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
+  });
+
+  it('returns null when no row exists for the user', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    });
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    expect(await loadPendingDeletion()).toBeNull();
+    expect(mockFrom).toHaveBeenCalledWith('account_deletions');
+    expect(mockSelectEq).toHaveBeenCalledWith('user_id', 'u1');
+  });
+
+  it('returns parsed payload when a row exists, with daysRemaining', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    });
+    // Requested 10 days ago — 20 days remaining (30 - 10).
+    mockMaybeSingle.mockResolvedValueOnce({
+      data: { requested_at: '2026-05-31T12:00:00.000Z' },
+      error: null,
+    });
+
+    const r = await loadPendingDeletion();
+    expect(r).not.toBeNull();
+    expect(r!.requestedAt.toISOString()).toBe('2026-05-31T12:00:00.000Z');
+    expect(r!.daysRemaining).toBe(20);
+  });
+
+  it('clamps daysRemaining at 0 (never negative) when the grace period has passed', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    });
+    // Requested 31 days ago — past grace, but cron has not fired yet.
+    mockMaybeSingle.mockResolvedValueOnce({
+      data: { requested_at: '2026-05-10T12:00:00.000Z' },
+      error: null,
+    });
+
+    const r = await loadPendingDeletion();
+    expect(r!.daysRemaining).toBe(0);
+  });
+
+  it('returns null defensively when the query errors', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    });
+    mockMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'PGRST301', message: 'boom' },
+    });
+
+    expect(await loadPendingDeletion()).toBeNull();
+  });
+
+  it('returns null defensively when the query throws', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: { session: { user: { id: 'u1' } } },
+      error: null,
+    });
+    mockMaybeSingle.mockRejectedValueOnce(new Error('boom'));
+
+    expect(await loadPendingDeletion()).toBeNull();
   });
 });

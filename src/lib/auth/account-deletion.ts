@@ -48,3 +48,34 @@ export async function cancelDeletion(): Promise<Result> {
   if (error) return { ok: false, error: 'network' };
   return { ok: true, value: undefined };
 }
+
+export interface PendingDeletion {
+  requestedAt: Date;
+  daysRemaining: number; // clamped at 0; never negative
+}
+
+const GRACE_PERIOD_DAYS = 30;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export async function loadPendingDeletion(): Promise<PendingDeletion | null> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return null;
+
+    const { data, error } = await supabase
+      .from('account_deletions')
+      .select('requested_at')
+      .eq('user_id', sessionData.session.user.id)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    const requestedAt = new Date(data.requested_at);
+    const expiresAt = requestedAt.getTime() + GRACE_PERIOD_DAYS * MS_PER_DAY;
+    const daysRemaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / MS_PER_DAY));
+
+    return { requestedAt, daysRemaining };
+  } catch {
+    return null;
+  }
+}
