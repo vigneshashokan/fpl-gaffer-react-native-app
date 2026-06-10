@@ -41,12 +41,18 @@ export async function promptBiometric(reason: string): Promise<PromptResult> {
       disableDeviceFallback: true,
     });
     if (r.success) return { ok: true };
+    // Surface the raw OS error so we can tell user_cancel (user dismissed)
+    // from system_cancel (OS dismissed — often a permission or transition
+    // issue) from not_available (no NSFaceIDUsageDescription in Info.plist
+    // or permission denied in iOS Settings).
+    console.warn('[biometric] authenticateAsync returned non-success:', r);
     if (r.error === 'user_cancel' || r.error === 'system_cancel') {
       return { ok: false, error: 'cancel' };
     }
     if (r.error === 'lockout') return { ok: false, error: 'lockout' };
     return { ok: false, error: 'unknown' };
-  } catch {
+  } catch (err) {
+    console.warn('[biometric] authenticateAsync threw:', err);
     return { ok: false, error: 'unknown' };
   }
 }
