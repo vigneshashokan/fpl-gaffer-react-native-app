@@ -7,10 +7,23 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-const mockMaybeSingle = jest.fn();
-const mockEq = jest.fn((_col: string, _val: unknown) => ({ maybeSingle: mockMaybeSingle }));
-const mockSelect = jest.fn((_cols: string) => ({ eq: mockEq }));
-const mockFrom = jest.fn((_table: string) => ({ select: mockSelect }));
+const mockProfilesMaybeSingle = jest.fn();
+const mockProfilesEq = jest.fn((_col: string, _val: unknown) => ({
+  maybeSingle: mockProfilesMaybeSingle,
+}));
+const mockProfilesSelect = jest.fn((_cols: string) => ({ eq: mockProfilesEq }));
+
+const mockDeletionsMaybeSingle = jest.fn();
+const mockDeletionsEq = jest.fn((_col: string, _val: unknown) => ({
+  maybeSingle: mockDeletionsMaybeSingle,
+}));
+const mockDeletionsSelect = jest.fn((_cols: string) => ({ eq: mockDeletionsEq }));
+
+const mockFrom = jest.fn((table: string) => {
+  if (table === 'profiles') return { select: mockProfilesSelect };
+  if (table === 'account_deletions') return { select: mockDeletionsSelect };
+  throw new Error('unexpected table: ' + table);
+});
 
 jest.mock('@/lib/supabase', () => ({
   supabase: {
@@ -32,9 +45,12 @@ const fakeSession = { user: { id: 'u1' }, access_token: 't' };
 
 describe('useProfileGate', () => {
   beforeEach(() => {
-    mockMaybeSingle.mockReset();
-    mockEq.mockClear();
-    mockSelect.mockClear();
+    mockProfilesMaybeSingle.mockReset();
+    mockProfilesEq.mockClear();
+    mockProfilesSelect.mockClear();
+    mockDeletionsMaybeSingle.mockReset();
+    mockDeletionsEq.mockClear();
+    mockDeletionsSelect.mockClear();
     mockFrom.mockClear();
     act(() => useAuthStore.setState({ session: null, hydrated: true }));
   });
@@ -53,28 +69,71 @@ describe('useProfileGate', () => {
   });
 
   it('resolves to missing when there is a session and no profile row', async () => {
-    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockProfilesMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockDeletionsMaybeSingle.mockResolvedValue({ data: null, error: null });
     act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
     const { result } = renderHook(() => useProfileGate());
     await waitFor(() => expect(result.current.status).toBe('missing'));
     expect(mockFrom).toHaveBeenCalledWith('profiles');
-    expect(mockEq).toHaveBeenCalledWith('user_id', 'u1');
+    expect(mockFrom).toHaveBeenCalledWith('account_deletions');
+    expect(mockProfilesEq).toHaveBeenCalledWith('user_id', 'u1');
   });
 
   it('resolves to complete when a profile row is returned', async () => {
-    mockMaybeSingle.mockResolvedValue({ data: { user_id: 'u1' }, error: null });
+    mockProfilesMaybeSingle.mockResolvedValue({ data: { user_id: 'u1' }, error: null });
+    mockDeletionsMaybeSingle.mockResolvedValue({ data: null, error: null });
     act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
     const { result } = renderHook(() => useProfileGate());
     await waitFor(() => expect(result.current.status).toBe('complete'));
   });
 
   it('refetch() re-runs the query', async () => {
-    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockProfilesMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockDeletionsMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
     act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
     const { result } = renderHook(() => useProfileGate());
     await waitFor(() => expect(result.current.status).toBe('missing'));
-    mockMaybeSingle.mockResolvedValueOnce({ data: { user_id: 'u1' }, error: null });
+    mockProfilesMaybeSingle.mockResolvedValueOnce({ data: { user_id: 'u1' }, error: null });
+    mockDeletionsMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
     act(() => result.current.refetch());
     await waitFor(() => expect(result.current.status).toBe('complete'));
+  });
+
+  it("resolves to 'pending_deletion' when a deletion row exists (regardless of profile)", async () => {
+    mockProfilesMaybeSingle.mockResolvedValue({ data: { user_id: 'u1' }, error: null });
+    mockDeletionsMaybeSingle.mockResolvedValue({
+      data: { user_id: 'u1', requested_at: '2026-05-31T12:00:00.000Z' },
+      error: null,
+    });
+    act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
+    const { result } = renderHook(() => useProfileGate());
+    await waitFor(() => expect(result.current.status).toBe('pending_deletion'));
+  });
+
+  it("'pending_deletion' wins even when the profile row is missing", async () => {
+    mockProfilesMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockDeletionsMaybeSingle.mockResolvedValue({
+      data: { user_id: 'u1', requested_at: '2026-05-31T12:00:00.000Z' },
+      error: null,
+    });
+    act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
+    const { result } = renderHook(() => useProfileGate());
+    await waitFor(() => expect(result.current.status).toBe('pending_deletion'));
+  });
+
+  it('stays loading if either query is still in flight', async () => {
+    let resolveProfile: (v: unknown) => void = () => {};
+    mockProfilesMaybeSingle.mockReturnValueOnce(
+      new Promise((r) => {
+        resolveProfile = r as never;
+      }) as never,
+    );
+    mockDeletionsMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
+    const { result } = renderHook(() => useProfileGate());
+    await new Promise((r) => setTimeout(r, 0));
+    expect(result.current.status).toBe('loading');
+    resolveProfile({ data: null, error: null });
+    await waitFor(() => expect(result.current.status).toBe('missing'));
   });
 });
