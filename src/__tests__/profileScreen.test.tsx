@@ -25,6 +25,17 @@ jest.mock('@/store/biometricStore', () => ({
     }),
 }));
 
+jest.mock('@/store/authStore', () => ({
+  __esModule: true,
+  useAuthStore: (selector: (s: { session: { user: { email: string | null } } | null }) => unknown) =>
+    selector({ session: { user: { email: 'test@example.com' } } }),
+}));
+
+jest.mock('@/lib/auth/account-deletion', () => ({
+  __esModule: true,
+  requestDeletion: jest.fn(),
+}));
+
 jest.mock('@/store/themeStore', () => ({
   __esModule: true,
   useThemeStore: () => ({ paletteKey: 'classic', dark: true }),

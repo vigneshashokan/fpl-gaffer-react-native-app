@@ -1,14 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { ApexTokens } from '@/constants/apexTokens';
+import { useAuthStore } from '@/store/authStore';
+import { requestDeletion } from '@/lib/auth/account-deletion';
 
 interface DeleteAccountProps {
   tk: ApexTokens;
 }
 
 export function DeleteAccount({ tk }: DeleteAccountProps) {
+  const sessionEmail = useAuthStore((s) => s.session?.user.email ?? '');
   const [confirm, setConfirm] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const matches =
+    sessionEmail.length > 0 &&
+    typed.trim().toLowerCase() === sessionEmail.toLowerCase();
+
+  const onDelete = async () => {
+    if (!matches || submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const r = await requestDeletion();
+      if (!r.ok) {
+        setError("Couldn't request deletion. Please try again.");
+      }
+      // On ok: signOut has fired inside requestDeletion, so
+      // (home)/_layout will redirect us out of Profile.
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <View style={styles.wrap}>
       {!confirm ? (
@@ -34,9 +61,34 @@ export function DeleteAccount({ tk }: DeleteAccountProps) {
             all your personal information, team, history and chips. This
             cannot be undone.
           </Text>
+
+          <Text style={[styles.confirmHint, { color: tk.variant }]}>
+            Type your email to confirm:
+          </Text>
+          <TextInput
+            value={typed}
+            onChangeText={setTyped}
+            placeholder="Type your email"
+            placeholderTextColor={tk.faint}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={[
+              styles.emailInput,
+              { color: tk.text, borderColor: tk.cardBorder, backgroundColor: tk.card },
+            ]}
+          />
+
+          {error && (
+            <Text style={[styles.error, { color: tk.pink }]}>{error}</Text>
+          )}
+
           <View style={styles.btnRow}>
             <Pressable
-              onPress={() => setConfirm(false)}
+              onPress={() => {
+                setConfirm(false);
+                setTyped('');
+                setError(null);
+              }}
               style={[
                 styles.cancelBtn,
                 { backgroundColor: tk.card, borderColor: tk.cardBorder },
@@ -45,10 +97,16 @@ export function DeleteAccount({ tk }: DeleteAccountProps) {
               <Text style={[styles.cancelText, { color: tk.text }]}>Cancel</Text>
             </Pressable>
             <Pressable
-              onPress={() => setConfirm(false)}
-              style={[styles.deleteBtn, { backgroundColor: tk.pink }]}
+              onPress={onDelete}
+              disabled={!matches || submitting}
+              style={[
+                styles.deleteBtn,
+                { backgroundColor: matches && !submitting ? tk.pink : tk.faint },
+              ]}
             >
-              <Text style={styles.deleteText}>Delete</Text>
+              <Text style={styles.deleteText}>
+                {submitting ? 'Deleting…' : 'Delete'}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -85,30 +143,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 9,
   },
-  openText: {
-    fontFamily: 'Archivo_700Bold',
-    fontSize: 15,
-  },
-  confirmCard: {
-    borderRadius: 14,
-    borderWidth: 1.5,
-    padding: 16,
-  },
-  confirmTitle: {
-    fontFamily: 'Archivo_800ExtraBold',
-    fontSize: 15,
-  },
+  openText: { fontFamily: 'Archivo_700Bold', fontSize: 15 },
+  confirmCard: { borderRadius: 14, borderWidth: 1.5, padding: 16 },
+  confirmTitle: { fontFamily: 'Archivo_800ExtraBold', fontSize: 15 },
   confirmBody: {
     fontFamily: 'Archivo_500Medium',
     fontSize: 13,
     marginTop: 5,
     lineHeight: 19,
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 10,
+  confirmHint: {
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 12.5,
     marginTop: 14,
+    marginBottom: 6,
   },
+  emailInput: {
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 14,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+  },
+  error: {
+    fontFamily: 'Archivo_600SemiBold',
+    fontSize: 12.5,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  btnRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   cancelBtn: {
     flex: 1,
     height: 44,
@@ -117,10 +181,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelText: {
-    fontFamily: 'Archivo_700Bold',
-    fontSize: 14,
-  },
+  cancelText: { fontFamily: 'Archivo_700Bold', fontSize: 14 },
   deleteBtn: {
     flex: 1,
     height: 44,
@@ -128,9 +189,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  deleteText: {
-    fontFamily: 'Archivo_700Bold',
-    fontSize: 14,
-    color: '#fff',
-  },
+  deleteText: { fontFamily: 'Archivo_700Bold', fontSize: 14, color: '#fff' },
 });
