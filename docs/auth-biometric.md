@@ -56,10 +56,10 @@ useAuthStore.session is null AND biometricStore.enabled is true AND
   ↓
 SignIn useEffect fires attemptUnlock() automatically
   ↓
+storage.loadSession() → { access_token, refresh_token }
+  ↓ (no stored session → return no_session, skip prompt)
 capability.promptBiometric("Unlock FPL Gaffer with Face ID")
   ↓ confirm
-storage.loadSession() → { access_token, refresh_token }
-  ↓
 supabase.auth.setSession({ access_token, refresh_token })
   ↓ Supabase validates, rotates if needed
 session lands → onAuthStateChange → useAuthStore.session updates
