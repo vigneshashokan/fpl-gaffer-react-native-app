@@ -18,6 +18,7 @@ import { signInWithEmail } from '@/lib/auth/email';
 import type { AuthErrorKind } from '@/lib/auth/email';
 import { emailSchema } from '@/lib/auth/validation';
 import { isSupported as biometricIsSupported } from '@/lib/auth/biometric/capability';
+import { attemptUnlock } from '@/lib/auth/biometric/enrollment';
 import { useBiometricStore } from '@/store/biometricStore';
 import { GafferLogo } from '@/components/ui/GafferLogo';
 import { PillBtn } from '@/components/ui/PillBtn';
@@ -48,9 +49,13 @@ export default function SignIn() {
 
   const biometricEnabled = useBiometricStore((s) => s.enabled);
   const biometricEnable = useBiometricStore((s) => s.enable);
+  const biometricHydrated = useBiometricStore((s) => s.hydrated);
+  const biometricJustSignedOut = useBiometricStore((s) => s.justSignedOut);
+  const consumeJustSignedOut = useBiometricStore((s) => s.consumeJustSignedOut);
 
   const [supported, setSupported] = useState(false);
   const [rememberBiometric, setRememberBiometric] = useState(false);
+  const [biometricBanner, setBiometricBanner] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +66,31 @@ export default function SignIn() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!biometricHydrated) return;
+    if (!biometricEnabled) return;
+    if (biometricJustSignedOut) {
+      consumeJustSignedOut();
+      return;
+    }
+    let cancelled = false;
+    attemptUnlock().then((r) => {
+      if (cancelled) return;
+      if (r.ok) return;
+      if (r.error === 'expired_link') {
+        setBiometricBanner(
+          'Face ID session expired — sign in with your password to re-enable.',
+        );
+      } else if (r.error === 'lockout') {
+        setBiometricBanner('Too many attempts. Sign in with your password.');
+      }
+      // 'cancel' and 'no_session' show no banner.
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [biometricHydrated, biometricEnabled, biometricJustSignedOut, consumeJustSignedOut]);
 
   const showCheckbox = supported && !biometricEnabled;
 
@@ -170,6 +200,9 @@ export default function SignIn() {
           Sign in to manage your squad
         </Text>
 
+        {biometricBanner && (
+          <Text style={[styles.banner, { color: t.textMuted }]}>{biometricBanner}</Text>
+        )}
         {params.verify_expired === '1' && (
           <Text style={[styles.banner, { color: t.textMuted }]}>
             Verification link expired. Sign in again to resend.

@@ -5,6 +5,8 @@ const mockSignIn = jest.fn();
 const mockPush = jest.fn();
 let mockSearchParams: Record<string, string> = {};
 
+const mockAttemptUnlock = jest.fn();
+
 const mockBiometricEnable = jest.fn();
 const mockBiometricSupported = jest.fn();
 let mockBiometricEnabled = false;
@@ -38,23 +40,34 @@ jest.mock('@/lib/auth/biometric/capability', () => ({
   isSupported: () => mockBiometricSupported(),
 }));
 
-jest.mock('@/store/biometricStore', () => ({
+jest.mock('@/lib/auth/biometric/enrollment', () => ({
   __esModule: true,
-  useBiometricStore: (selector: (s: {
-    enabled: boolean;
-    hydrated: boolean;
-    justSignedOut: boolean;
-    enable: () => Promise<unknown>;
-    consumeJustSignedOut: () => void;
-  }) => unknown) =>
-    selector({
-      enabled: mockBiometricEnabled,
-      hydrated: mockBiometricHydrated,
-      justSignedOut: mockBiometricJustSignedOut,
-      enable: () => mockBiometricEnable(),
-      consumeJustSignedOut: () => mockConsumeJustSignedOut(),
-    }),
+  attemptUnlock: () => mockAttemptUnlock(),
 }));
+
+jest.mock('@/store/biometricStore', () => {
+  // Stable function references — created once in the factory closure so the
+  // useEffect dep array doesn't see a new reference on every render.
+  const stableEnable = (...args: unknown[]) => mockBiometricEnable(...args);
+  const stableConsumeJustSignedOut = () => mockConsumeJustSignedOut();
+  return {
+    __esModule: true,
+    useBiometricStore: (selector: (s: {
+      enabled: boolean;
+      hydrated: boolean;
+      justSignedOut: boolean;
+      enable: () => Promise<unknown>;
+      consumeJustSignedOut: () => void;
+    }) => unknown) =>
+      selector({
+        enabled: mockBiometricEnabled,
+        hydrated: mockBiometricHydrated,
+        justSignedOut: mockBiometricJustSignedOut,
+        enable: stableEnable,
+        consumeJustSignedOut: stableConsumeJustSignedOut,
+      }),
+  };
+});
 
 import SignIn from '@/app/(onboarding)/signin';
 
@@ -66,6 +79,7 @@ describe('SignIn screen', () => {
     mockBiometricEnable.mockReset();
     mockBiometricSupported.mockReset().mockResolvedValue(false);
     mockConsumeJustSignedOut.mockReset();
+    mockAttemptUnlock.mockReset().mockResolvedValue({ ok: true, value: undefined });
     mockBiometricEnabled = false;
     mockBiometricHydrated = true;
     mockBiometricJustSignedOut = false;
@@ -156,6 +170,7 @@ describe('SignIn screen — biometric enrollment', () => {
     mockBiometricEnable.mockReset();
     mockBiometricSupported.mockReset().mockResolvedValue(false);
     mockConsumeJustSignedOut.mockReset();
+    mockAttemptUnlock.mockReset().mockResolvedValue({ ok: true, value: undefined });
     mockBiometricEnabled = false;
     mockBiometricHydrated = true;
     mockBiometricJustSignedOut = false;
@@ -232,5 +247,76 @@ describe('SignIn screen — biometric enrollment', () => {
       fireEvent.press(getByText('Sign in'));
     });
     expect(mockBiometricEnable).not.toHaveBeenCalled();
+  });
+});
+
+describe('SignIn screen — biometric auto-unlock', () => {
+  beforeEach(() => {
+    mockAttemptUnlock.mockReset();
+    mockBiometricEnable.mockReset();
+    mockBiometricSupported.mockReset().mockResolvedValue(false);
+    mockConsumeJustSignedOut.mockReset();
+    mockBiometricEnabled = false;
+    mockBiometricHydrated = true;
+    mockBiometricJustSignedOut = false;
+  });
+
+  it('auto-fires attemptUnlock when enabled and hydrated', async () => {
+    mockBiometricEnabled = true;
+    mockBiometricHydrated = true;
+    mockAttemptUnlock.mockResolvedValueOnce({ ok: true, value: undefined });
+    render(<SignIn />);
+    await waitFor(() => expect(mockAttemptUnlock).toHaveBeenCalled());
+  });
+
+  it('does NOT auto-fire attemptUnlock when biometric is disabled', async () => {
+    mockBiometricEnabled = false;
+    mockBiometricHydrated = true;
+    render(<SignIn />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(mockAttemptUnlock).not.toHaveBeenCalled();
+  });
+
+  it('does NOT auto-fire attemptUnlock before biometric store is hydrated', async () => {
+    mockBiometricEnabled = true;
+    mockBiometricHydrated = false;
+    render(<SignIn />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(mockAttemptUnlock).not.toHaveBeenCalled();
+  });
+
+  it('does NOT auto-fire when justSignedOut is true, and consumes the flag', async () => {
+    mockBiometricEnabled = true;
+    mockBiometricHydrated = true;
+    mockBiometricJustSignedOut = true;
+    render(<SignIn />);
+    await waitFor(() => expect(mockConsumeJustSignedOut).toHaveBeenCalled());
+    expect(mockAttemptUnlock).not.toHaveBeenCalled();
+  });
+
+  it('shows the expired_link banner when attemptUnlock resolves expired_link', async () => {
+    mockBiometricEnabled = true;
+    mockBiometricHydrated = true;
+    mockAttemptUnlock.mockResolvedValueOnce({ ok: false, error: 'expired_link' });
+    const { findByText } = render(<SignIn />);
+    await findByText(/Face ID session expired/i);
+  });
+
+  it('shows the lockout banner when attemptUnlock resolves lockout', async () => {
+    mockBiometricEnabled = true;
+    mockBiometricHydrated = true;
+    mockAttemptUnlock.mockResolvedValueOnce({ ok: false, error: 'lockout' });
+    const { findByText } = render(<SignIn />);
+    await findByText(/Too many attempts/i);
+  });
+
+  it('shows no banner when attemptUnlock resolves cancel', async () => {
+    mockBiometricEnabled = true;
+    mockBiometricHydrated = true;
+    mockAttemptUnlock.mockResolvedValueOnce({ ok: false, error: 'cancel' });
+    const { queryByText } = render(<SignIn />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(queryByText(/Face ID session expired/i)).toBeNull();
+    expect(queryByText(/Too many attempts/i)).toBeNull();
   });
 });
