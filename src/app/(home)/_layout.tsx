@@ -8,6 +8,9 @@ export default function HomeStackLayout() {
   const { status } = useProfileGate();
 
   if (!session) return <Redirect href="/(onboarding)/signin" />;
+  if (status === 'pending_deletion') {
+    return <Redirect href="/(onboarding)/restore-account" />;
+  }
   if (status === 'loading') return null;
   if (status === 'missing') return <Redirect href="/(onboarding)/complete-profile" />;
 
