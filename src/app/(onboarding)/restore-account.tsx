@@ -28,6 +28,7 @@ export default function RestoreAccount() {
   const signOut = useAuthStore((s) => s.signOut);
 
   const [pending, setPending] = useState<PendingDeletion | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,12 +36,21 @@ export default function RestoreAccount() {
   useEffect(() => {
     let cancelled = false;
     loadPendingDeletion().then((p) => {
-      if (!cancelled) setPending(p);
+      if (cancelled) return;
+      setPending(p);
+      setLoaded(true);
     });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Once loaded with no pending row (cron may have already swept), bounce home.
+  useEffect(() => {
+    if (loaded && pending === null) {
+      router.replace('/(home)/(tabs)/team');
+    }
+  }, [loaded, pending]);
 
   useEffect(() => {
     if (!session) return;
@@ -92,33 +102,37 @@ export default function RestoreAccount() {
           <GafferLogo size={46} light={dark} variant="wordmark" />
         </View>
 
-        <Text style={[styles.title, { color: t.text }]}>{greeting}</Text>
+        {loaded && pending !== null && (
+          <>
+            <Text style={[styles.title, { color: t.text }]}>{greeting}</Text>
 
-        <Text style={[styles.body, { color: t.textMuted }]}>
-          Your account is deleted but can still be restored within {days} days.
-          After that, it will be permanently removed.
-        </Text>
+            <Text style={[styles.body, { color: t.textMuted }]}>
+              Your account is deleted but can still be restored within {days} days.
+              After that, it will be permanently removed.
+            </Text>
 
-        <Text style={[styles.question, { color: t.text }]}>
-          Do you want to restore your deleted account?
-        </Text>
+            <Text style={[styles.question, { color: t.text }]}>
+              Do you want to restore your deleted account?
+            </Text>
 
-        <PillBtn
-          variant="accent"
-          onPress={onRestore}
-          accentInk={t.accentInk}
-          style={styles.restoreBtn}
-        >
-          {restoring ? 'Restoring…' : 'Restore my account'}
-        </PillBtn>
+            <PillBtn
+              variant="accent"
+              onPress={onRestore}
+              accentInk={t.accentInk}
+              style={styles.restoreBtn}
+            >
+              {restoring ? 'Restoring…' : 'Restore my account'}
+            </PillBtn>
 
-        {error && (
-          <Text style={[styles.error, { color: '#FF3B5C' }]}>{error}</Text>
+            {error && (
+              <Text style={[styles.error, { color: '#FF3B5C' }]}>{error}</Text>
+            )}
+
+            <Pressable onPress={onCancel} hitSlop={8} style={styles.cancelWrap}>
+              <Text style={[styles.cancelText, { color: t.textMuted }]}>Cancel</Text>
+            </Pressable>
+          </>
         )}
-
-        <Pressable onPress={onCancel} hitSlop={8} style={styles.cancelWrap}>
-          <Text style={[styles.cancelText, { color: t.textMuted }]}>Cancel</Text>
-        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

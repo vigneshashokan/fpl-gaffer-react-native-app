@@ -128,4 +128,10 @@ describe('RestoreAccount screen', () => {
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
     expect(mockReplace).toHaveBeenCalledWith('/(onboarding)/signin');
   });
+
+  it('routes home when loadPendingDeletion returns null (cron already swept)', async () => {
+    mockLoadPendingDeletion.mockResolvedValueOnce(null);
+    render(<RestoreAccount />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(home)/(tabs)/team'));
+  });
 });
