@@ -24,15 +24,20 @@ export function useProfileGate(): { status: ProfileStatus; refetch: () => void }
     Promise.all([
       supabase.from('profiles').select('user_id').eq('user_id', userId).maybeSingle(),
       supabase.from('account_deletions').select('user_id').eq('user_id', userId).maybeSingle(),
-    ]).then(([profile, deletion]) => {
-      if (cancelled) return;
-      // pending_deletion wins over both other states.
-      if (deletion.data) {
-        setStatus('pending_deletion');
-        return;
-      }
-      setStatus(profile.data ? 'complete' : 'missing');
-    });
+    ])
+      .then(([profile, deletion]) => {
+        if (cancelled) return;
+        // pending_deletion wins over both other states.
+        if (deletion.data) {
+          setStatus('pending_deletion');
+          return;
+        }
+        setStatus(profile.data ? 'complete' : 'missing');
+      })
+      .catch(() => {
+        // If either query throws (e.g. network error), leave status as
+        // 'loading' so the gate stays in its safe default state.
+      });
 
     return () => {
       cancelled = true;

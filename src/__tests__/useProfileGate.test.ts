@@ -136,4 +136,13 @@ describe('useProfileGate', () => {
     resolveProfile({ data: null, error: null });
     await waitFor(() => expect(result.current.status).toBe('missing'));
   });
+
+  it('stays loading if either query throws', async () => {
+    mockProfilesMaybeSingle.mockRejectedValueOnce(new Error('boom'));
+    mockDeletionsMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    act(() => useAuthStore.setState({ session: fakeSession as never, hydrated: true }));
+    const { result } = renderHook(() => useProfileGate());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(result.current.status).toBe('loading');
+  });
 });
