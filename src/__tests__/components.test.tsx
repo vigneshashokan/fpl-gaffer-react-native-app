@@ -1,5 +1,21 @@
+const mockRequestDeletion = jest.fn();
+
+jest.mock('@/lib/auth/account-deletion', () => ({
+  __esModule: true,
+  requestDeletion: () => mockRequestDeletion(),
+}));
+
+let mockSessionEmail: string | null = 'ada@example.com';
+jest.mock('@/store/authStore', () => ({
+  __esModule: true,
+  useAuthStore: (selector: (s: { session: { user: { email: string | null } } | null }) => unknown) =>
+    selector({
+      session: mockSessionEmail ? { user: { email: mockSessionEmail } } : null,
+    }),
+}));
+
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Icon } from '@/components/ui/Icon';
 import { PosTag } from '@/components/ui/PosTag';
 import { PillBtn } from '@/components/ui/PillBtn';
@@ -705,5 +721,61 @@ describe('Checkbox', () => {
     );
     fireEvent.press(getByLabelText('Remember to use Face ID'));
     expect(onChange).toHaveBeenCalledWith(true);
+  });
+});
+
+// ── DeleteAccount ─────────────────────────────────────────────
+describe('DeleteAccount', () => {
+  const tk = apexTokens(true, 'classic');
+
+  beforeEach(() => {
+    mockRequestDeletion.mockReset();
+    mockSessionEmail = 'ada@example.com';
+  });
+
+  function openConfirmCard(getByText: ReturnType<typeof render>['getByText']) {
+    fireEvent.press(getByText('Delete account'));
+  }
+
+  it('Delete button is disabled until email is typed correctly', () => {
+    const { getByText, getByPlaceholderText, queryByText } = render(
+      <DeleteAccount tk={tk} />,
+    );
+    openConfirmCard(getByText);
+    // Typed wrong email → still no requestDeletion call.
+    fireEvent.changeText(getByPlaceholderText('Type your email'), 'wrong@example.com');
+    fireEvent.press(getByText('Delete'));
+    expect(mockRequestDeletion).not.toHaveBeenCalled();
+    // Button visible but inert.
+    expect(queryByText('Delete')).toBeTruthy();
+  });
+
+  it('Delete button calls requestDeletion when email matches (case-insensitive)', async () => {
+    mockRequestDeletion.mockResolvedValueOnce({ ok: true, value: undefined });
+    const { getByText, getByPlaceholderText } = render(<DeleteAccount tk={tk} />);
+    openConfirmCard(getByText);
+    fireEvent.changeText(getByPlaceholderText('Type your email'), 'ADA@EXAMPLE.COM');
+    fireEvent.press(getByText('Delete'));
+    await waitFor(() => expect(mockRequestDeletion).toHaveBeenCalled());
+  });
+
+  it('shows inline error when requestDeletion returns not ok', async () => {
+    mockRequestDeletion.mockResolvedValueOnce({ ok: false, error: 'network' });
+    const { getByText, getByPlaceholderText, findByText } = render(
+      <DeleteAccount tk={tk} />,
+    );
+    openConfirmCard(getByText);
+    fireEvent.changeText(getByPlaceholderText('Type your email'), 'ada@example.com');
+    fireEvent.press(getByText('Delete'));
+    await findByText(/Couldn't request deletion/i);
+  });
+
+  it('Cancel closes the confirm card without calling requestDeletion', () => {
+    const { getByText, queryByText } = render(<DeleteAccount tk={tk} />);
+    openConfirmCard(getByText);
+    fireEvent.press(getByText('Cancel'));
+    expect(mockRequestDeletion).not.toHaveBeenCalled();
+    // Confirm card is gone, "Delete account" opener is back.
+    expect(queryByText('Delete account')).toBeTruthy();
   });
 });

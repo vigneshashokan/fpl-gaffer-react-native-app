@@ -4,7 +4,7 @@ import { render } from '@testing-library/react-native';
 const mockRedirect = jest.fn();
 const mockStack = jest.fn();
 let mockSession: { user: { id: string } } | null = null;
-let mockProfileStatus: 'loading' | 'missing' | 'complete' = 'loading';
+let mockProfileStatus: 'loading' | 'pending_deletion' | 'missing' | 'complete' = 'loading';
 let mockSegments: string[] = [];
 
 jest.mock('expo-router', () => ({
@@ -89,5 +89,31 @@ describe('OnboardingLayout', () => {
     render(<OnboardingLayout />);
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockStack).toHaveBeenCalled();
+  });
+
+  it("redirects to /(onboarding)/restore-account when status is 'pending_deletion'", () => {
+    mockSession = { user: { id: 'u1' } };
+    mockProfileStatus = 'pending_deletion';
+    mockSegments = ['(onboarding)', 'signin'];
+    render(<OnboardingLayout />);
+    expect(mockRedirect).toHaveBeenCalledWith('/(onboarding)/restore-account');
+  });
+
+  it("stays on restore-account when already there with 'pending_deletion'", () => {
+    mockSession = { user: { id: 'u1' } };
+    mockProfileStatus = 'pending_deletion';
+    mockSegments = ['(onboarding)', 'restore-account'];
+    render(<OnboardingLayout />);
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockStack).toHaveBeenCalled();
+  });
+
+  it("'pending_deletion' beats 'complete' — does not redirect to home", () => {
+    mockSession = { user: { id: 'u1' } };
+    mockProfileStatus = 'pending_deletion';
+    mockSegments = ['(onboarding)', 'signin'];
+    render(<OnboardingLayout />);
+    expect(mockRedirect).toHaveBeenCalledWith('/(onboarding)/restore-account');
+    expect(mockRedirect).not.toHaveBeenCalledWith('/(home)/(tabs)/team');
   });
 });
