@@ -123,6 +123,11 @@ export default function SignIn() {
       const result = await signInWithGoogle();
       if (result.ok) {
         if (rememberBiometric) {
+          // iOS won't reliably show a system prompt (Face ID) while it's
+          // still dismissing another system UI (the in-app auth browser).
+          // Yield ~300ms so the browser dismissal finishes before the
+          // biometric confirm prompt is requested.
+          await new Promise((r) => setTimeout(r, 300));
           const er = await biometricEnable();
           if (!er.ok) {
             console.warn('[biometric] enable failed (non-fatal):', er.error);

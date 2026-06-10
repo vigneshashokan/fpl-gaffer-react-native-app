@@ -2,6 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 
 const mockSignIn = jest.fn();
+const mockSignInGoogle = jest.fn(() => Promise.resolve({ ok: false, error: 'cancel' }));
 const mockPush = jest.fn();
 let mockSearchParams: Record<string, string> = {};
 
@@ -21,7 +22,7 @@ jest.mock('@/lib/auth/email', () => ({
 
 jest.mock('@/lib/auth/google', () => ({
   __esModule: true,
-  signInWithGoogle: jest.fn(() => Promise.resolve({ ok: false, error: 'cancel' })),
+  signInWithGoogle: () => mockSignInGoogle(),
 }));
 
 jest.mock('expo-router', () => ({
@@ -246,6 +247,32 @@ describe('SignIn screen — biometric enrollment', () => {
     await act(async () => {
       fireEvent.press(getByText('Sign in'));
     });
+    expect(mockBiometricEnable).not.toHaveBeenCalled();
+  });
+
+  it('calls biometricStore.enable() when checkbox ticked and Google sign-in succeeds', async () => {
+    mockBiometricSupported.mockResolvedValueOnce(true);
+    mockSignInGoogle.mockResolvedValueOnce({ ok: true });
+    mockBiometricEnable.mockResolvedValueOnce({ ok: true, value: undefined });
+    const { getByText, findByText } = render(<SignIn />);
+    await findByText('Remember to use Face ID');
+    fireEvent.press(getByText('Remember to use Face ID'));
+    await act(async () => {
+      fireEvent.press(getByText('Continue with Google'));
+    });
+    await waitFor(() => expect(mockBiometricEnable).toHaveBeenCalled());
+  });
+
+  it('does NOT call biometricStore.enable() on Google sign-in when checkbox unticked', async () => {
+    mockBiometricSupported.mockResolvedValueOnce(true);
+    mockSignInGoogle.mockResolvedValueOnce({ ok: true });
+    const { getByText, findByText } = render(<SignIn />);
+    await findByText('Remember to use Face ID');
+    await act(async () => {
+      fireEvent.press(getByText('Continue with Google'));
+    });
+    // Give the promise chain (incl. the deferred biometric enroll) time to settle.
+    await new Promise((r) => setTimeout(r, 400));
     expect(mockBiometricEnable).not.toHaveBeenCalled();
   });
 });
