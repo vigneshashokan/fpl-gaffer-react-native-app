@@ -1,3 +1,8 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { fetchJson } from '../lib/fpl-client.ts';
+import { sha256Hex } from '../lib/hash.ts';
+import { finishRun, skipRun } from '../lib/ingestion-runs.ts';
+
 export interface FixtureRaw {
   id: number;
   event: number | null;
@@ -60,4 +65,42 @@ export function projectForHash(rows: FixtureRow[]): string {
     r.finished,
   ]);
   return JSON.stringify(projection);
+}
+
+export interface IngestFixturesDeps {
+  supabase: SupabaseClient;
+  fetch: typeof globalThis.fetch;
+}
+
+export async function ingestFixtures(
+  runId: string,
+  deps: IngestFixturesDeps,
+): Promise<void> {
+  const raw = await fetchJson<FixtureRaw[]>(
+    'https://fantasy.premierleague.com/api/fixtures/',
+    { fetch: deps.fetch },
+  );
+  const rows = normalizeFixtures(raw);
+  const hash = await sha256Hex(projectForHash(rows));
+
+  const { data: prior } = await deps.supabase
+    .from('ingestion_runs')
+    .select('content_hash')
+    .eq('source', 'fixtures')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (prior && (prior as { content_hash: string | null }).content_hash === hash) {
+    await skipRun(deps.supabase, runId, 'no content change', { contentHash: hash });
+    return;
+  }
+
+  const upsertRes = await deps.supabase.from('fixtures').upsert(rows);
+  if (upsertRes.error) throw upsertRes.error;
+
+  await finishRun(deps.supabase, runId, {
+    rowsUpserted: rows.length,
+    contentHash: hash,
+  });
 }

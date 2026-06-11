@@ -1,3 +1,8 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { fetchJson } from '../lib/fpl-client.ts';
+import { isBootstrapRefreshWindow } from '../lib/calendar.ts';
+import { finishRun, skipRun } from '../lib/ingestion-runs.ts';
+
 export interface BootstrapTeam {
   id: number;
   name: string;
@@ -117,4 +122,39 @@ export function normalizePlayers(raw: BootstrapStaticResponse): PlayerRow[] {
     bps: e.bps,
     transfers_in_event: e.transfers_in_event,
   }));
+}
+
+export interface IngestBootstrapDeps {
+  supabase: SupabaseClient;
+  fetch: typeof globalThis.fetch;
+  now: () => Date;
+}
+
+export async function ingestBootstrap(
+  runId: string,
+  deps: IngestBootstrapDeps,
+  opts: { force: boolean },
+): Promise<void> {
+  const today = deps.now();
+  if (!opts.force && !isBootstrapRefreshWindow(today)) {
+    await skipRun(deps.supabase, runId, 'outside refresh window');
+    return;
+  }
+
+  const raw = await fetchJson<BootstrapStaticResponse>(
+    'https://fantasy.premierleague.com/api/bootstrap-static/',
+    { fetch: deps.fetch },
+  );
+
+  const clubs = normalizeClubs(raw);
+  const players = normalizePlayers(raw);
+
+  const clubsRes = await deps.supabase.from('clubs').upsert(clubs);
+  if (clubsRes.error) throw clubsRes.error;
+  const playersRes = await deps.supabase.from('players').upsert(players);
+  if (playersRes.error) throw playersRes.error;
+
+  await finishRun(deps.supabase, runId, {
+    rowsUpserted: clubs.length + players.length,
+  });
 }
