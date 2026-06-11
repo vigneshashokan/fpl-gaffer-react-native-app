@@ -38,11 +38,7 @@ select vault.create_secret('<anon key from Settings → API>',    'supabase_anon
 
 Verify with `select name from vault.decrypted_secrets;` — both names should appear.
 
-The `fpl-ingest` Edge Function additionally needs the service-role key as a function-level secret. Run once per environment from a local terminal linked to the project:
-
-```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-```
+The `fpl-ingest` Edge Function reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from its runtime environment. **No setup required** — the Supabase platform auto-injects both into every Edge Function. (The CLI actively refuses `supabase secrets set` for any name starting with `SUPABASE_` because they're reserved for the platform.)
 
 ## Repo layout
 
