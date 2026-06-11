@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '@/store/themeStore';
@@ -7,14 +7,10 @@ import { apexTokens } from '@/constants/apexTokens';
 import { PROFILE } from '@/constants/data';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { Icon } from '@/components/ui/Icon';
 import { ReadField } from '@/components/profile/ReadField';
 import { GenderRow } from '@/components/profile/GenderRow';
-import { ToggleRow } from '@/components/profile/ToggleRow';
 import { ChangePassword } from '@/components/profile/ChangePassword';
 import { DeleteAccount } from '@/components/profile/DeleteAccount';
-import { isSupported as biometricIsSupported } from '@/lib/auth/biometric/capability';
-import { useBiometricStore } from '@/store/biometricStore';
 
 export default function ProfileModal() {
   const router = useRouter();
@@ -22,20 +18,6 @@ export default function ProfileModal() {
   const t = getTheme(paletteKey, dark);
   const tk = apexTokens(dark, paletteKey);
   const [gender, setGender] = useState(PROFILE.gender);
-  const biometricEnabled = useBiometricStore((s) => s.enabled);
-  const biometricEnable = useBiometricStore((s) => s.enable);
-  const biometricDisable = useBiometricStore((s) => s.disable);
-  const [supported, setSupported] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    biometricIsSupported().then((v) => {
-      if (!cancelled) setSupported(v);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const heroFrom = t.primary;
   const heroTo = dark ? '#0C1018' : '#5B0F63';
@@ -78,19 +60,6 @@ export default function ProfileModal() {
 
         <SectionCard title="Security" tk={tk}>
           <ChangePassword tk={tk} />
-          {supported && (
-            <ToggleRow
-              label="Face ID login"
-              sub={
-                biometricEnabled ? 'Biometric sign-in is on' : 'Use password to sign in'
-              }
-              value={biometricEnabled}
-              onChange={(v) => (v ? biometricEnable() : biometricDisable())}
-              tk={tk}
-              showDivider
-              icon={<Icon name="faceid" color={tk.faint} size={20} />}
-            />
-          )}
         </SectionCard>
 
         <Text style={[styles.dangerLabel, { color: tk.faint }]}>Danger zone</Text>
