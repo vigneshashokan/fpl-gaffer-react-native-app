@@ -63,6 +63,10 @@
       "**/__tests__/**/*.test.ts",
       "**/__tests__/**/*.test.tsx"
     ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/supabase/functions/"
+    ],
     "moduleNameMapper": {
       "\\.(png|jpg|jpeg|gif|webp|svg)$": "<rootDir>/__mocks__/fileMock.js",
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
