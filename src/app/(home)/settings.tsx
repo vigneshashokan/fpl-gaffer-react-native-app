@@ -10,6 +10,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { PlusCard } from '@/components/settings/PlusCard';
 import { ThemeToggle } from '@/components/settings/ThemeToggle';
 import { NotificationsCard } from '@/components/settings/NotificationsCard';
+import { BiometricCard } from '@/components/settings/BiometricCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { FollowUsRow } from '@/components/settings/FollowUsRow';
 import { supabase } from '@/lib/supabase';
@@ -44,6 +45,7 @@ export default function SettingsModal() {
 
         <Text style={[styles.sectionLabel, { color: tk.faint }]}>Preferences</Text>
         <NotificationsCard tk={tk} />
+        <BiometricCard tk={tk} />
 
         <SectionCard title="More" tk={tk}>
           <SettingsRow

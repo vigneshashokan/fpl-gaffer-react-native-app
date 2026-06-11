@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 
 const mockEnable = jest.fn();
 const mockDisable = jest.fn();
@@ -48,7 +48,7 @@ jest.mock('expo-router', () => ({
 
 import Profile from '@/app/(home)/profile';
 
-describe('Profile screen — Face ID row', () => {
+describe('Profile screen — Face ID row moved to Settings', () => {
   beforeEach(() => {
     mockEnable.mockReset();
     mockDisable.mockReset();
@@ -56,29 +56,14 @@ describe('Profile screen — Face ID row', () => {
     mockBiometricEnabled = false;
   });
 
-  it('hides the Face ID row when device is unsupported', async () => {
-    mockIsSupported.mockResolvedValueOnce(false);
+  it('does not render the Face ID row even when biometrics are supported', async () => {
+    mockIsSupported.mockResolvedValueOnce(true);
     const { queryByText } = render(<Profile />);
-    await waitFor(() => expect(queryByText('Face ID login')).toBeNull());
-  });
-
-  it('shows the Face ID row when device is supported', async () => {
-    mockIsSupported.mockResolvedValueOnce(true);
-    const { findByText } = render(<Profile />);
-    await findByText('Face ID login');
-  });
-
-  it('reflects biometricStore.enabled = true in the toggle subtitle', async () => {
-    mockBiometricEnabled = true;
-    mockIsSupported.mockResolvedValueOnce(true);
-    const { findByText } = render(<Profile />);
-    await findByText('Biometric sign-in is on');
-  });
-
-  it('reflects biometricStore.enabled = false in the toggle subtitle', async () => {
-    mockBiometricEnabled = false;
-    mockIsSupported.mockResolvedValueOnce(true);
-    const { findByText } = render(<Profile />);
-    await findByText('Use password to sign in');
+    // Flush any pending biometric-capability promise so the assertion
+    // would catch the old behavior (Face ID rendered after isSupported resolves).
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(queryByText('Face ID login')).toBeNull();
   });
 });
