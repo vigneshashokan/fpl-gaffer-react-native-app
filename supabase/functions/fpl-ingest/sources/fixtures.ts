@@ -70,6 +70,7 @@ export function projectForHash(rows: FixtureRow[]): string {
 export interface IngestFixturesDeps {
   supabase: SupabaseClient;
   fetch: typeof globalThis.fetch;
+  now: () => Date;
 }
 
 export async function ingestFixtures(
@@ -81,12 +82,15 @@ export async function ingestFixtures(
     { fetch: deps.fetch },
   );
   const rows = normalizeFixtures(raw);
+  const nowIso = deps.now().toISOString();
+  const stamped = rows.map((r) => ({ ...r, updated_at: nowIso }));
   const hash = await sha256Hex(projectForHash(rows));
 
   const { data: prior } = await deps.supabase
     .from('ingestion_runs')
     .select('content_hash')
     .eq('source', 'fixtures')
+    .neq('id', runId)
     .order('started_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -96,7 +100,7 @@ export async function ingestFixtures(
     return;
   }
 
-  const upsertRes = await deps.supabase.from('fixtures').upsert(rows);
+  const upsertRes = await deps.supabase.from('fixtures').upsert(stamped);
   if (upsertRes.error) throw upsertRes.error;
 
   await finishRun(deps.supabase, runId, {

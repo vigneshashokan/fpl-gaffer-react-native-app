@@ -55,18 +55,22 @@ function makeDeps(opts: {
           return {
             eq() {
               return {
-                order() {
+                neq() {
                   return {
-                    limit() {
+                    order() {
                       return {
-                        maybeSingle() {
-                          calls.push({ table, op: 'select' });
-                          return Promise.resolve({
-                            data: opts.fixturesHashOnRead === undefined
-                              ? null
-                              : { content_hash: opts.fixturesHashOnRead },
-                            error: null,
-                          });
+                        limit() {
+                          return {
+                            maybeSingle() {
+                              calls.push({ table, op: 'select' });
+                              return Promise.resolve({
+                                data: opts.fixturesHashOnRead === undefined
+                                  ? null
+                                  : { content_hash: opts.fixturesHashOnRead },
+                                error: null,
+                              });
+                            },
+                          };
                         },
                       };
                     },

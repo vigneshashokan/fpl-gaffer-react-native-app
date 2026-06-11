@@ -55,7 +55,7 @@ export async function errorRun(
   const truncated = stack.length > MAX_ERROR_CHARS
     ? stack.slice(0, MAX_ERROR_CHARS)
     : stack;
-  await supabase
+  const { error: closeError } = await supabase
     .from('ingestion_runs')
     .update({
       finished_at: new Date().toISOString(),
@@ -63,4 +63,5 @@ export async function errorRun(
       error_message: truncated,
     })
     .eq('id', runId);
+  if (closeError) console.error('errorRun: failed to close run', runId, closeError);
 }

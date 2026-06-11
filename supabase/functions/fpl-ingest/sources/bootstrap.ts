@@ -148,10 +148,13 @@ export async function ingestBootstrap(
 
   const clubs = normalizeClubs(raw);
   const players = normalizePlayers(raw);
+  const nowIso = deps.now().toISOString();
+  const stampedClubs = clubs.map((c) => ({ ...c, updated_at: nowIso }));
+  const stampedPlayers = players.map((p) => ({ ...p, updated_at: nowIso }));
 
-  const clubsRes = await deps.supabase.from('clubs').upsert(clubs);
+  const clubsRes = await deps.supabase.from('clubs').upsert(stampedClubs);
   if (clubsRes.error) throw clubsRes.error;
-  const playersRes = await deps.supabase.from('players').upsert(players);
+  const playersRes = await deps.supabase.from('players').upsert(stampedPlayers);
   if (playersRes.error) throw playersRes.error;
 
   await finishRun(deps.supabase, runId, {
