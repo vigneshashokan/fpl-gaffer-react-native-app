@@ -18,6 +18,10 @@ import type {
   Position,
   TransferPitchPlayer,
   ClubCode,
+  CaptainPick,
+  Suggestion,
+  TransferChip,
+  TransferSuggestion,
 } from '@/types/fpl';
 
 interface PicksResponse {
@@ -112,9 +116,9 @@ function buildApexTeam(
     bench:  squad.bench.map((p): PitchPlayer => ({
       name: p.name, pts: null, gk: p.pos === 'GKP',
     })),
-    captainPicks: [],
+    captainPicks: [] as CaptainPick[],
     captainApplied: squad.starters.find((p) => p.capt)?.name ?? '',
-    suggestions: [],
+    suggestions: [] as Suggestion[],
     transfer: {
       freeTransfers: 1,
       squadValue: sumPrice([...squad.starters, ...squad.bench]),
@@ -122,8 +126,8 @@ function buildApexTeam(
       nextGw: currentGw + 1,
       deadline: '',
       captain: parseCaptain(squad.starters.find((p) => p.capt)?.name ?? ''),
-      transferSuggestions: [],
-      chips: [],
+      transferSuggestions: [] as TransferSuggestion[],
+      chips: [] as TransferChip[],
       pitch: groupTransferPitch(squad.starters, squad.bench),
     },
   };
