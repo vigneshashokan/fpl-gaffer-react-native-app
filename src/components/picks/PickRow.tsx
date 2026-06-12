@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import type { TopPickPlayer, Fixture, ClubCode } from '@/types/fpl';
-import { jerseyFor } from '@/constants/jerseys';
+import { jerseyForClub } from '@/constants/jerseys';
 import { ApexTokens } from '@/constants/apexTokens';
 import { xPtsOf, xpColor } from '@/utils/xpts';
 
@@ -23,7 +23,7 @@ export function PickRow({ p, zebra, last, tk, dark, fixtures, squadNames }: Pick
   const accentBar = owned
     ? (dark ? '#DDD6FE' : '#C4B5FD')
     : (dark ? '#A78BFA' : '#7C3AED');
-  const jersey = jerseyFor(p.name);
+  const jersey = jerseyForClub(p.club);
 
   return (
     <View

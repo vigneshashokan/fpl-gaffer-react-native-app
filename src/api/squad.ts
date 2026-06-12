@@ -114,7 +114,7 @@ function buildApexTeam(
     highestPoints: 0,
     pitch:  groupByPosition(squad.starters),
     bench:  squad.bench.map((p): PitchPlayer => ({
-      name: p.name, pts: null, gk: p.pos === 'GKP',
+      name: p.name, pts: null, gk: p.pos === 'GKP', club: p.club,
     })),
     captainPicks: [] as CaptainPick[],
     captainApplied: squad.starters.find((p) => p.capt)?.name ?? '',
@@ -138,7 +138,9 @@ function groupByPosition(starters: Player[]): PitchPlayer[][] {
   return order.map((pos) =>
     starters
       .filter((p) => p.pos === pos)
-      .map((p): PitchPlayer => ({ name: p.name, pts: null, capt: p.capt, gk: pos === 'GKP' })),
+      .map((p): PitchPlayer => ({
+        name: p.name, pts: null, capt: p.capt, gk: pos === 'GKP', club: p.club,
+      })),
   );
 }
 

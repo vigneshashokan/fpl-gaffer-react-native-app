@@ -60,6 +60,7 @@ export interface Fixture {
 export interface PitchPlayer {
   name: string;
   pts: number | null;
+  club?: ClubCode;
   capt?: boolean;
   ball?: boolean;
   sub?: number;
