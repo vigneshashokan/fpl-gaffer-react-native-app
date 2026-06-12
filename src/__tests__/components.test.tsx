@@ -417,15 +417,14 @@ describe('PickRow', () => {
 
   it('shows name and price', () => {
     const tk = apexTokens(false, 'classic');
-    const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} />);
+    const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} fixtures={{}} squadNames={new Set()} />);
     expect(getByText('Haaland')).toBeTruthy();
     expect(getByText('£14.6m')).toBeTruthy();
   });
 
   it('marks squad members with In team badge', () => {
     const tk = apexTokens(false, 'classic');
-    // Haaland is in our SQUAD
-    const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} />);
+    const { getByText } = render(<PickRow p={player} zebra={false} last tk={tk} dark={false} fixtures={{}} squadNames={new Set(['Haaland'])} />);
     expect(getByText('In team')).toBeTruthy();
   });
 });
@@ -659,7 +658,7 @@ describe('PicksCard', () => {
     const rows = [
       { name: 'Raya', club: 'ARS' as const, p: 5.6, f: 4.8, tp: 92, own: 28.4, gw: 6 },
     ];
-    const { getByText } = render(<PicksCard pos="GKP" rows={rows} tk={tk} dark={false} />);
+    const { getByText } = render(<PicksCard pos="GKP" rows={rows} tk={tk} dark={false} fixtures={{}} squadNames={new Set()} />);
     expect(getByText('Goalkeepers')).toBeTruthy();
     expect(getByText('Raya')).toBeTruthy();
   });
@@ -669,7 +668,7 @@ describe('PicksCard', () => {
     const rows = [
       { name: 'Wood', club: 'NFO' as const, p: 7.5, f: 6.7, tp: 101, own: 26.1, gw: 9 },
     ];
-    const { getByText } = render(<PicksCard pos="FWD" rows={rows} tk={tk} dark={false} />);
+    const { getByText } = render(<PicksCard pos="FWD" rows={rows} tk={tk} dark={false} fixtures={{}} squadNames={new Set()} />);
     expect(getByText('Forwards')).toBeTruthy();
   });
 });

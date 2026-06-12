@@ -1,13 +1,9 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import { TopPickPlayer, FIXTURES, SQUAD } from '@/constants/data';
+import type { TopPickPlayer, Fixture, ClubCode } from '@/types/fpl';
 import { jerseyFor } from '@/constants/jerseys';
 import { ApexTokens } from '@/constants/apexTokens';
 import { xPtsOf, xpColor } from '@/utils/xpts';
-
-const SQUAD_NAMES = new Set(
-  [...SQUAD.starters, ...SQUAD.bench].map((p) => p.name)
-);
 
 interface PickRowProps {
   p: TopPickPlayer;
@@ -15,11 +11,13 @@ interface PickRowProps {
   last: boolean;
   tk: ApexTokens;
   dark: boolean;
+  fixtures: Partial<Record<ClubCode, Fixture>>;
+  squadNames: Set<string>;
 }
 
-export function PickRow({ p, zebra, last, tk, dark }: PickRowProps) {
-  const fx = FIXTURES[p.club] ?? { opp: '—', h: true };
-  const owned = SQUAD_NAMES.has(p.name);
+export function PickRow({ p, zebra, last, tk, dark, fixtures, squadNames }: PickRowProps) {
+  const fx = fixtures[p.club] ?? { opp: '—' as unknown as ClubCode, h: true };
+  const owned = squadNames.has(p.name);
   const xp = xPtsOf(p);
   const xpC = xpColor(xp, dark);
   const accentBar = owned
