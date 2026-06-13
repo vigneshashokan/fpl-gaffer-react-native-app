@@ -5,6 +5,15 @@ jest.mock('@/lib/auth/account-deletion', () => ({
   requestDeletion: () => mockRequestDeletion(),
 }));
 
+jest.mock('@/api/notificationPrefs', () => ({
+  __esModule: true,
+  useNotificationPrefs: () => ({
+    data: { deadlines: false, prices: false, gwConfirm: false, transfer: false },
+    isPending: false,
+  }),
+  useUpdateNotificationPrefs: () => ({ mutate: jest.fn(), isError: false }),
+}));
+
 const mockChangePassword = jest.fn();
 jest.mock('@/lib/auth/email', () => ({
   __esModule: true,
@@ -652,10 +661,10 @@ describe('Settings components', () => {
     expect(getByText('Pitch')).toBeTruthy();
   });
 
-  it('NotificationsCard renders header and summary', () => {
+  it('NotificationsCard renders summary from fetched prefs', () => {
     const { getByText } = render(<NotificationsCard tk={tk} />);
     expect(getByText('Notifications')).toBeTruthy();
-    expect(getByText('3 of 4 on')).toBeTruthy(); // default state
+    expect(getByText('All off')).toBeTruthy(); // driven by the mocked hook (all four off)
   });
 
   it('SettingsRow renders label', () => {
