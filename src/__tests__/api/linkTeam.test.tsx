@@ -8,13 +8,23 @@ import { queryKeys } from '@/api/queryKeys';
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     from: jest.fn(),
-    auth: {
-      getUser: jest.fn(),
-    },
   },
+}));
+jest.mock('@/store/authStore', () => ({
+  useAuthStore: jest.fn(),
 }));
 
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/authStore';
+
+function setSession(session: { user: { id: string } } | null) {
+  (useAuthStore as unknown as jest.Mock).mockImplementation(
+    (selector?: (s: unknown) => unknown) => {
+      const state = { session };
+      return selector ? selector(state) : state;
+    },
+  );
+}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -22,10 +32,7 @@ beforeEach(() => {
 
 describe('useLinkTeam', () => {
   it('updates profiles.fpl_team_id for the current user', async () => {
-    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
-    });
+    setSession({ user: { id: 'user-1' } });
     const eq = jest.fn().mockResolvedValue({ error: null });
     const update = jest.fn().mockReturnValue({ eq });
     (supabase.from as jest.Mock).mockReturnValue({ update });
@@ -45,11 +52,8 @@ describe('useLinkTeam', () => {
     expect(eq).toHaveBeenCalledWith('user_id', 'user-1');
   });
 
-  it('invalidates the profile cache key on success', async () => {
-    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
-    });
+  it('invalidates the user-scoped profile cache key on success', async () => {
+    setSession({ user: { id: 'user-1' } });
     const eq = jest.fn().mockResolvedValue({ error: null });
     (supabase.from as jest.Mock).mockReturnValue({ update: jest.fn().mockReturnValue({ eq }) });
 
@@ -63,14 +67,11 @@ describe('useLinkTeam', () => {
       await result.current.mutateAsync({ teamId: 12345 });
     });
 
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.profile('current') });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.profile('user-1') });
   });
 
-  it('throws when there is no authenticated user', async () => {
-    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-      data: { user: null },
-      error: null,
-    });
+  it('throws when there is no authenticated session', async () => {
+    setSession(null);
     const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -84,10 +85,7 @@ describe('useLinkTeam', () => {
   });
 
   it('surfaces supabase error when the update fails', async () => {
-    (supabase.auth.getUser as jest.Mock).mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
-    });
+    setSession({ user: { id: 'user-1' } });
     const eq = jest.fn().mockResolvedValue({ error: { message: 'forbidden', code: '42501' } });
     (supabase.from as jest.Mock).mockReturnValue({ update: jest.fn().mockReturnValue({ eq }) });
 

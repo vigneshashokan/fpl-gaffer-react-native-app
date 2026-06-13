@@ -7,27 +7,27 @@
 // hook's status, not stored separately. This avoids two sources of truth.
 // Reachable from Complete Profile (after submit) and from LinkTeamCta.
 
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  ActivityIndicator,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeStore } from '@/store/themeStore';
-import { apexTokens } from '@/constants/apexTokens';
-import { useTeamPreview, type Preview } from '@/api/teamPreview';
 import { useLinkTeam } from '@/api/linkTeam';
-import { TeamIdInput } from '@/components/connect-team/TeamIdInput';
-import { TeamHelpSheet } from '@/components/connect-team/TeamHelpSheet';
+import { useTeamPreview, type Preview } from '@/api/teamPreview';
 import { ConfirmHero } from '@/components/connect-team/ConfirmHero';
 import { ConfirmPitch } from '@/components/connect-team/ConfirmPitch';
+import { TeamHelpSheet } from '@/components/connect-team/TeamHelpSheet';
+import { TeamIdInput } from '@/components/connect-team/TeamIdInput';
+import { apexTokens } from '@/constants/apexTokens';
+import { useThemeStore } from '@/store/themeStore';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Stage =
   | { kind: 'idle' }
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   // Keeps the input view as a tight, balanced column so the field doesn't
   // look isolated next to full-width siblings. The confirm view doesn't
   // use this — its content is naturally wider.
-  inputColumn: { width: '100%', maxWidth: 180, alignSelf: 'center', gap: 14 },
+  inputColumn: { width: '100%', maxWidth: 240, alignSelf: 'center', gap: 14 },
   title: { fontFamily: 'Archivo_800ExtraBold', fontSize: 24, letterSpacing: -0.5 },
   subtitle: { fontFamily: 'Archivo_500Medium', fontSize: 13.5 },
   label: { fontFamily: 'Archivo_700Bold', fontSize: 10.5, letterSpacing: 1, textTransform: 'uppercase' },
