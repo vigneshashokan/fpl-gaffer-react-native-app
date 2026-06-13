@@ -45,10 +45,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#fff',
     letterSpacing: -0.3,
+    textAlign: 'center',
   },
   manager: {
     fontFamily: 'Archivo_500Medium',
     fontSize: 13,
     color: 'rgba(255,255,255,0.78)',
+    textAlign: 'center',
   },
 });

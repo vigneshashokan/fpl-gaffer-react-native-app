@@ -125,6 +125,7 @@ export default function ConnectTeam() {
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 12 }]}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {(stage.kind === 'idle' || stage.kind === 'submitted') && (
           <>
@@ -186,7 +187,6 @@ export default function ConnectTeam() {
           <>
             <Text style={[styles.title, { color: tk.text }]}>Is this you?</Text>
             <ConfirmHero preview={stage.preview} />
-            <View style={{ height: 12 }} />
             <Text style={[styles.label, { color: tk.faint }]}>YOUR XI</Text>
             <ConfirmPitch preview={stage.preview} />
 
