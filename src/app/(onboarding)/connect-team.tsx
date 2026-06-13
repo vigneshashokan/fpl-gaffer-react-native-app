@@ -123,7 +123,18 @@ export default function ConnectTeam() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 12 }]}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingTop: insets.top + 12,
+            flexGrow: 1,
+            // Center the input view vertically; the confirm view grows
+            // past the viewport so justifyContent has no effect there.
+            justifyContent: stage.kind === 'confirming' || stage.kind === 'link_error'
+              ? 'flex-start'
+              : 'center',
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
