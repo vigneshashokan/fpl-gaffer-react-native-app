@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1,
+    textAlign: 'center',
   },
   error: {
     fontFamily: 'Archivo_500Medium',
