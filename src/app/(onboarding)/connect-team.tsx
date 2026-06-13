@@ -139,7 +139,7 @@ export default function ConnectTeam() {
         showsVerticalScrollIndicator={false}
       >
         {(stage.kind === 'idle' || stage.kind === 'submitted') && (
-          <>
+          <View style={styles.inputColumn}>
             <Text style={[styles.title, { color: tk.text, textAlign: 'center' }]}>
               Connect your FPL team
             </Text>
@@ -193,7 +193,7 @@ export default function ConnectTeam() {
                 <Text style={[styles.ghostBtnText, { color: tk.faint }]}>Skip for now</Text>
               </Pressable>
             </View>
-          </>
+          </View>
         )}
 
         {(stage.kind === 'confirming' || stage.kind === 'link_error') && (
@@ -234,6 +234,10 @@ export default function ConnectTeam() {
 
 const styles = StyleSheet.create({
   scroll: { padding: 20, gap: 14 },
+  // Keeps the input view as a tight, balanced column so the field doesn't
+  // look isolated next to full-width siblings. The confirm view doesn't
+  // use this — its content is naturally wider.
+  inputColumn: { width: '100%', maxWidth: 320, alignSelf: 'center', gap: 14 },
   title: { fontFamily: 'Archivo_800ExtraBold', fontSize: 24, letterSpacing: -0.5 },
   subtitle: { fontFamily: 'Archivo_500Medium', fontSize: 13.5 },
   label: { fontFamily: 'Archivo_700Bold', fontSize: 10.5, letterSpacing: 1, textTransform: 'uppercase' },

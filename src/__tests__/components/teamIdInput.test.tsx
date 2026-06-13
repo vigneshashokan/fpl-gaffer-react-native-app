@@ -44,12 +44,12 @@ describe('<TeamIdInput />', () => {
     expect(onHelpPress).toHaveBeenCalled();
   });
 
-  it('caps input length at 10 digits', () => {
+  it('caps input length at 8 digits', () => {
     const onChange = jest.fn();
     const { getByTestId } = render(
       <TeamIdInput value="" onChange={onChange} onHelpPress={() => {}} testID="tid" />,
     );
     fireEvent.changeText(getByTestId('tid'), '12345678901234');
-    expect(onChange).toHaveBeenCalledWith('1234567890');
+    expect(onChange).toHaveBeenCalledWith('12345678');
   });
 });

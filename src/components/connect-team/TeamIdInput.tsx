@@ -1,15 +1,16 @@
 // src/components/connect-team/TeamIdInput.tsx
 //
-// Numeric, max-10-digit input with thin-space formatting for readability
-// (1 234 567). Error message lives below the field; help link sits under
-// the error slot so layout stays consistent.
+// Numeric, max-8-digit input with thin-space formatting for readability
+// (12 345 678). FPL team IDs are at most 8 digits today; 8 is the hard
+// cap. Error message lives below the field; help link sits under the
+// error slot so layout stays consistent.
 
 import React from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { apexTokens } from '@/constants/apexTokens';
 
-const MAX_DIGITS = 10;
+const MAX_DIGITS = 8;
 
 function formatWithSpaces(digits: string): string {
   if (!digits) return '';
@@ -49,7 +50,7 @@ export function TeamIdInput({
         onChangeText={handleChange}
         keyboardType="number-pad"
         editable={!disabled}
-        placeholder="1 234 567"
+        placeholder="12 345 678"
         placeholderTextColor={tk.faint}
         style={[
           styles.input,
