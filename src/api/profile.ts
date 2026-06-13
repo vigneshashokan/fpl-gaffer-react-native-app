@@ -1,11 +1,17 @@
 // src/api/profile.ts
 //
-// useProfile() returns the current user's profile row joined with their
-// auth email and the biometric-store faceId toggle.
+// useProfile() returns the current user's profile row joined with the
+// session's email and the biometric-store faceId toggle.
+//
+// Cache key is scoped by auth user id so two accounts on the same device
+// don't share a cache entry. Combined with the global QueryClient clear
+// in AuthCacheClear (on SIGNED_IN/OUT/USER_UPDATED), this prevents any
+// cross-account data leak via TanStack's cache.
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useBiometricStore } from '@/store/biometricStore';
+import { useAuthStore } from '@/store/authStore';
 import { queryKeys } from './queryKeys';
 import type { Profile } from '@/types/fpl';
 
@@ -38,22 +44,21 @@ export function profileFromRow(row: ProfileRow, email: string, faceId: boolean):
 }
 
 export function useProfile() {
+  const userId = useAuthStore((s) => s.session?.user.id);
+  const userEmail = useAuthStore((s) => s.session?.user.email);
   const { enabled: faceIdEnabled } = useBiometricStore();
-  return useQuery({
-    queryKey: queryKeys.profile('current'),
-    queryFn: async (): Promise<Profile> => {
-      const { data: userRes, error: userErr } = await supabase.auth.getUser();
-      if (userErr) throw userErr;
-      const user = userRes.user;
-      if (!user) throw new Error('No authenticated user');
 
+  return useQuery({
+    queryKey: queryKeys.profile(userId ?? 'anon'),
+    enabled: !!userId,
+    queryFn: async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
         .select('first_name, last_name, dob, fpl_team_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId!)
         .single();
       if (error) throw error;
-      return profileFromRow(data as ProfileRow, user.email ?? '', faceIdEnabled);
+      return profileFromRow(data as ProfileRow, userEmail ?? '', faceIdEnabled);
     },
     staleTime: Infinity,
   });
