@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   input: {
     fontFamily: 'JetBrainsMono_500Medium',
-    fontSize: 18,
+    fontSize: 36,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 14,
