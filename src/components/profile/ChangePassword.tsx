@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Icon } from '@/components/ui/Icon';
 import { ApexTokens } from '@/constants/apexTokens';
+import { changePassword, type AuthErrorKind } from '@/lib/auth/email';
 
 interface ChangePasswordProps {
   tk: ApexTokens;
@@ -11,6 +12,8 @@ interface ChangePasswordProps {
 export function ChangePassword({ tk }: ChangePasswordProps) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<AuthErrorKind | null>(null);
   const [cur, setCur] = useState('');
   const [nw, setNw] = useState('');
   const [cf, setCf] = useState('');
@@ -24,7 +27,15 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
     setCf('');
   };
 
-  const submit = () => {
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    const r = await changePassword(cur, nw);
+    setSaving(false);
+    if (!r.ok) {
+      setError(r.error);
+      return;
+    }
     setDone(true);
     setOpen(false);
     reset();
@@ -41,6 +52,7 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
         onPress={() => {
           setOpen((o) => !o);
           setDone(false);
+          setError(null);
         }}
         style={styles.head}
       >
@@ -82,23 +94,28 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
               Passwords don't match
             </Text>
           )}
+          {error && (
+            <Text style={[styles.errorText, { color: tk.pink }]}>
+              {errorCopy(error)}
+            </Text>
+          )}
           <Pressable
-            disabled={!ready}
+            disabled={!ready || saving}
             onPress={submit}
             style={[
               styles.submit,
               {
-                backgroundColor: ready ? tk.activeFill : tk.track,
+                backgroundColor: ready && !saving ? tk.activeFill : tk.track,
               },
             ]}
           >
             <Text
               style={[
                 styles.submitText,
-                { color: ready ? '#fff' : tk.faint },
+                { color: ready && !saving ? '#fff' : tk.faint },
               ]}
             >
-              Update password
+              {saving ? 'Updating…' : 'Update password'}
             </Text>
           </Pressable>
         </View>
@@ -112,6 +129,21 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
       )}
     </View>
   );
+}
+
+function errorCopy(kind: AuthErrorKind): string {
+  switch (kind) {
+    case 'invalid_credentials':
+      return 'Current password is incorrect.';
+    case 'weak_password':
+      return 'New password is too weak.';
+    case 'network':
+      return 'No connection — try again.';
+    case 'rate_limited':
+      return 'Too many attempts — try again shortly.';
+    default:
+      return "Couldn't update password — try again.";
+  }
 }
 
 function Caret({ color }: { color: string }) {

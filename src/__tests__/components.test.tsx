@@ -5,6 +5,12 @@ jest.mock('@/lib/auth/account-deletion', () => ({
   requestDeletion: () => mockRequestDeletion(),
 }));
 
+const mockChangePassword = jest.fn();
+jest.mock('@/lib/auth/email', () => ({
+  __esModule: true,
+  changePassword: (cur: string, next: string) => mockChangePassword(cur, next),
+}));
+
 let mockSessionEmail: string | null = 'ada@example.com';
 jest.mock('@/store/authStore', () => ({
   __esModule: true,
@@ -607,6 +613,20 @@ describe('Profile components', () => {
   it('ChangePassword renders collapsed', () => {
     const { getByText } = render(<ChangePassword tk={tk} />);
     expect(getByText('Change password')).toBeTruthy();
+  });
+
+  it('ChangePassword shows an inline error when the current password is wrong', async () => {
+    mockChangePassword.mockResolvedValueOnce({ ok: false, error: 'invalid_credentials' });
+    const { getByText, getByPlaceholderText } = render(<ChangePassword tk={tk} />);
+
+    fireEvent.press(getByText('Change password')); // expand
+    fireEvent.changeText(getByPlaceholderText('Current password'), 'wrong');
+    fireEvent.changeText(getByPlaceholderText('New password'), 'NewPass1');
+    fireEvent.changeText(getByPlaceholderText('Confirm new password'), 'NewPass1');
+    fireEvent.press(getByText('Update password'));
+
+    await waitFor(() => expect(getByText('Current password is incorrect.')).toBeTruthy());
+    expect(mockChangePassword).toHaveBeenCalledWith('wrong', 'NewPass1');
   });
 
   it('DeleteAccount renders initial button', () => {
