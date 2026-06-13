@@ -116,4 +116,34 @@ describe('OnboardingLayout', () => {
     expect(mockRedirect).toHaveBeenCalledWith('/(onboarding)/restore-account');
     expect(mockRedirect).not.toHaveBeenCalledWith('/(home)/(tabs)/team');
   });
+
+  it('keeps a complete-profile user on connect-team when they navigate in via the CTA', () => {
+    mockSession = { user: { id: 'u1' } };
+    mockProfileStatus = 'complete';
+    mockSegments = ['(onboarding)', 'connect-team'];
+    render(<OnboardingLayout />);
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockStack).toHaveBeenCalled();
+  });
+
+  it('keeps the user on connect-team during the post-signup race when status is still missing', () => {
+    // After complete-profile INSERTs the row and router.replace's to
+    // connect-team, useProfileGate has not yet refetched — status is the
+    // stale "missing" from before the INSERT. The layout must not bounce
+    // them back to complete-profile.
+    mockSession = { user: { id: 'u1' } };
+    mockProfileStatus = 'missing';
+    mockSegments = ['(onboarding)', 'connect-team'];
+    render(<OnboardingLayout />);
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockStack).toHaveBeenCalled();
+  });
+
+  it('still routes a pending_deletion user away from connect-team to restore-account', () => {
+    mockSession = { user: { id: 'u1' } };
+    mockProfileStatus = 'pending_deletion';
+    mockSegments = ['(onboarding)', 'connect-team'];
+    render(<OnboardingLayout />);
+    expect(mockRedirect).toHaveBeenCalledWith('/(onboarding)/restore-account');
+  });
 });
