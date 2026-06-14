@@ -21,7 +21,9 @@ export interface NotificationPrefs {
 }
 
 // Matches the DB column defaults (transfer defaults off — it's noisy).
-const DEFAULT_PREFS: NotificationPrefs = {
+// Exported so UI can show a stable fallback before the row loads without
+// duplicating the default values.
+export const DEFAULT_PREFS: NotificationPrefs = {
   deadlines: true,
   prices: true,
   gwConfirm: true,

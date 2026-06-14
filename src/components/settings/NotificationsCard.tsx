@@ -6,7 +6,7 @@ import { ApexTokens } from '@/constants/apexTokens';
 import {
   useNotificationPrefs,
   useUpdateNotificationPrefs,
-  type NotificationPrefs,
+  DEFAULT_PREFS,
 } from '@/api/notificationPrefs';
 
 const ITEMS = [
@@ -18,13 +18,6 @@ const ITEMS = [
 
 type Key = (typeof ITEMS)[number]['key'];
 
-const DEFAULTS: NotificationPrefs = {
-  deadlines: true,
-  prices: true,
-  gwConfirm: true,
-  transfer: false,
-};
-
 interface NotificationsCardProps {
   tk: ApexTokens;
 }
@@ -33,7 +26,7 @@ export function NotificationsCard({ tk }: NotificationsCardProps) {
   const [open, setOpen] = useState(false);
   const { data, isPending } = useNotificationPrefs();
   const { mutate, isError } = useUpdateNotificationPrefs();
-  const prefs = data ?? DEFAULTS;
+  const prefs = data ?? DEFAULT_PREFS;
 
   const onCount = ITEMS.filter((it) => prefs[it.key]).length;
   const allOn = onCount === ITEMS.length;
