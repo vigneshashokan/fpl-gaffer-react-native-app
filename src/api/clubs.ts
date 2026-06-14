@@ -56,14 +56,16 @@ export function clubCodeByTeamIdFromRows(rows: ClubRow[]): Record<number, ClubCo
   return out;
 }
 
+async function queryClubsByTeamId(): Promise<Record<number, ClubCode>> {
+  const { data, error } = await supabase.from('clubs').select('id, short_name, name');
+  if (error) throw error;
+  return clubCodeByTeamIdFromRows((data ?? []) as ClubRow[]);
+}
+
 export function useClubCodeByTeamId() {
   return useQuery({
     queryKey: queryKeys.clubsByTeamId,
-    queryFn: async () => {
-      const { data, error } = await supabase.from('clubs').select('id, short_name, name');
-      if (error) throw error;
-      return clubCodeByTeamIdFromRows((data ?? []) as ClubRow[]);
-    },
+    queryFn: queryClubsByTeamId,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
