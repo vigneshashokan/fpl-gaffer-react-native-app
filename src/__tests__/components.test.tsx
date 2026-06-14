@@ -618,6 +618,24 @@ describe('Profile components', () => {
     expect(getByText('Change password')).toBeTruthy();
   });
 
+  it('ChangePassword toggles password visibility with the eye button', () => {
+    const { getByText, getByPlaceholderText, getAllByLabelText } = render(<ChangePassword tk={tk} />);
+    fireEvent.press(getByText('Change password')); // expand
+
+    // Each field starts masked.
+    expect(getByPlaceholderText('Current password').props.secureTextEntry).toBe(true);
+
+    // Reveal the current-password field (first of the three eye buttons).
+    fireEvent.press(getAllByLabelText('Show password')[0]);
+    expect(getByPlaceholderText('Current password').props.secureTextEntry).toBe(false);
+    // The other fields stay masked (per-field toggle).
+    expect(getByPlaceholderText('New password').props.secureTextEntry).toBe(true);
+
+    // Toggling back re-masks it.
+    fireEvent.press(getAllByLabelText('Hide password')[0]);
+    expect(getByPlaceholderText('Current password').props.secureTextEntry).toBe(true);
+  });
+
   it('ChangePassword shows an inline error when the current password is wrong', async () => {
     mockChangePassword.mockResolvedValueOnce({ ok: false, error: 'invalid_credentials' });
     const { getByText, getByPlaceholderText } = render(<ChangePassword tk={tk} />);

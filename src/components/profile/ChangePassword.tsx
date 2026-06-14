@@ -41,11 +41,6 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
     reset();
   };
 
-  const inputStyle = [
-    styles.input,
-    { backgroundColor: tk.headStrip, color: tk.text, borderColor: tk.cardBorder },
-  ];
-
   return (
     <View style={{ borderTopColor: tk.line, borderTopWidth: 1 }}>
       <Pressable
@@ -65,29 +60,23 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
 
       {open && (
         <View style={styles.body}>
-          <TextInput
-            secureTextEntry
+          <PasswordField
             placeholder="Current password"
-            placeholderTextColor={tk.faint}
             value={cur}
             onChangeText={setCur}
-            style={inputStyle}
+            tk={tk}
           />
-          <TextInput
-            secureTextEntry
+          <PasswordField
             placeholder="New password"
-            placeholderTextColor={tk.faint}
             value={nw}
             onChangeText={setNw}
-            style={inputStyle}
+            tk={tk}
           />
-          <TextInput
-            secureTextEntry
+          <PasswordField
             placeholder="Confirm new password"
-            placeholderTextColor={tk.faint}
             value={cf}
             onChangeText={setCf}
-            style={inputStyle}
+            tk={tk}
           />
           {mismatch && (
             <Text style={[styles.errorText, { color: tk.pink }]}>
@@ -127,6 +116,44 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
           <Text style={[styles.doneText, { color: tk.green }]}>Password updated</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+function PasswordField({
+  placeholder,
+  value,
+  onChangeText,
+  tk,
+}: {
+  placeholder: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  tk: ApexTokens;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <View style={styles.fieldWrap}>
+      <TextInput
+        secureTextEntry={!visible}
+        placeholder={placeholder}
+        placeholderTextColor={tk.faint}
+        value={value}
+        onChangeText={onChangeText}
+        style={[
+          styles.input,
+          { backgroundColor: tk.headStrip, color: tk.text, borderColor: tk.cardBorder },
+        ]}
+      />
+      <Pressable
+        onPress={() => setVisible((v) => !v)}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+        style={styles.eyeBtn}
+      >
+        <Icon name={visible ? 'eyeOff' : 'eye'} color={tk.faint} size={18} />
+      </Pressable>
     </View>
   );
 }
@@ -178,13 +205,27 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 9,
   },
+  fieldWrap: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     height: 46,
     borderRadius: 11,
     borderWidth: 1.5,
-    paddingHorizontal: 14,
+    paddingLeft: 14,
+    paddingRight: 46,
     fontFamily: 'Archivo_600SemiBold',
     fontSize: 14.5,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 6,
+    top: 0,
+    bottom: 0,
+    width: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
     fontFamily: 'Archivo_600SemiBold',
