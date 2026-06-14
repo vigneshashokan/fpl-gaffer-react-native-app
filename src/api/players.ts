@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from './queryKeys';
-import type { Player, Position, TopPickPlayer, ClubCode } from '@/types/fpl';
+import type { Player, Position, TopPickPlayer, ClubCode, PlayerStatus } from '@/types/fpl';
 
 interface PlayerRow {
   id: number;
@@ -20,7 +20,7 @@ interface PlayerRow {
   total_points: number;
   selected_by_percent: string;
   ep_next: string;
-  status: string;
+  status: PlayerStatus;
   news: string;
   chance_of_playing_next_round: number | null;
   ict_index: string;
