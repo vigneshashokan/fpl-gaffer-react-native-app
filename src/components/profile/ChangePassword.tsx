@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Icon } from '@/components/ui/Icon';
 import { ApexTokens } from '@/constants/apexTokens';
+import { changePassword, type AuthErrorKind } from '@/lib/auth/email';
 
 interface ChangePasswordProps {
   tk: ApexTokens;
@@ -11,6 +12,8 @@ interface ChangePasswordProps {
 export function ChangePassword({ tk }: ChangePasswordProps) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<AuthErrorKind | null>(null);
   const [cur, setCur] = useState('');
   const [nw, setNw] = useState('');
   const [cf, setCf] = useState('');
@@ -24,16 +27,19 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
     setCf('');
   };
 
-  const submit = () => {
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    const r = await changePassword(cur, nw);
+    setSaving(false);
+    if (!r.ok) {
+      setError(r.error);
+      return;
+    }
     setDone(true);
     setOpen(false);
     reset();
   };
-
-  const inputStyle = [
-    styles.input,
-    { backgroundColor: tk.headStrip, color: tk.text, borderColor: tk.cardBorder },
-  ];
 
   return (
     <View style={{ borderTopColor: tk.line, borderTopWidth: 1 }}>
@@ -41,6 +47,7 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
         onPress={() => {
           setOpen((o) => !o);
           setDone(false);
+          setError(null);
         }}
         style={styles.head}
       >
@@ -53,52 +60,51 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
 
       {open && (
         <View style={styles.body}>
-          <TextInput
-            secureTextEntry
+          <PasswordField
             placeholder="Current password"
-            placeholderTextColor={tk.faint}
             value={cur}
             onChangeText={setCur}
-            style={inputStyle}
+            tk={tk}
           />
-          <TextInput
-            secureTextEntry
+          <PasswordField
             placeholder="New password"
-            placeholderTextColor={tk.faint}
             value={nw}
             onChangeText={setNw}
-            style={inputStyle}
+            tk={tk}
           />
-          <TextInput
-            secureTextEntry
+          <PasswordField
             placeholder="Confirm new password"
-            placeholderTextColor={tk.faint}
             value={cf}
             onChangeText={setCf}
-            style={inputStyle}
+            tk={tk}
           />
           {mismatch && (
             <Text style={[styles.errorText, { color: tk.pink }]}>
               Passwords don't match
             </Text>
           )}
+          {error && (
+            <Text style={[styles.errorText, { color: tk.pink }]}>
+              {errorCopy(error)}
+            </Text>
+          )}
           <Pressable
-            disabled={!ready}
+            disabled={!ready || saving}
             onPress={submit}
             style={[
               styles.submit,
               {
-                backgroundColor: ready ? tk.activeFill : tk.track,
+                backgroundColor: ready && !saving ? tk.activeFill : tk.track,
               },
             ]}
           >
             <Text
               style={[
                 styles.submitText,
-                { color: ready ? '#fff' : tk.faint },
+                { color: ready && !saving ? '#fff' : tk.faint },
               ]}
             >
-              Update password
+              {saving ? 'Updating…' : 'Update password'}
             </Text>
           </Pressable>
         </View>
@@ -112,6 +118,59 @@ export function ChangePassword({ tk }: ChangePasswordProps) {
       )}
     </View>
   );
+}
+
+function PasswordField({
+  placeholder,
+  value,
+  onChangeText,
+  tk,
+}: {
+  placeholder: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  tk: ApexTokens;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <View style={styles.fieldWrap}>
+      <TextInput
+        secureTextEntry={!visible}
+        placeholder={placeholder}
+        placeholderTextColor={tk.faint}
+        value={value}
+        onChangeText={onChangeText}
+        style={[
+          styles.input,
+          { backgroundColor: tk.headStrip, color: tk.text, borderColor: tk.cardBorder },
+        ]}
+      />
+      <Pressable
+        onPress={() => setVisible((v) => !v)}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+        style={styles.eyeBtn}
+      >
+        <Icon name={visible ? 'eyeOff' : 'eye'} color={tk.faint} size={18} />
+      </Pressable>
+    </View>
+  );
+}
+
+function errorCopy(kind: AuthErrorKind): string {
+  switch (kind) {
+    case 'invalid_credentials':
+      return 'Current password is incorrect.';
+    case 'weak_password':
+      return 'New password is too weak.';
+    case 'network':
+      return 'No connection — try again.';
+    case 'rate_limited':
+      return 'Too many attempts — try again shortly.';
+    default:
+      return "Couldn't update password — try again.";
+  }
 }
 
 function Caret({ color }: { color: string }) {
@@ -146,13 +205,27 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 9,
   },
+  fieldWrap: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     height: 46,
     borderRadius: 11,
     borderWidth: 1.5,
-    paddingHorizontal: 14,
+    paddingLeft: 14,
+    paddingRight: 46,
     fontFamily: 'Archivo_600SemiBold',
     fontSize: 14.5,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 6,
+    top: 0,
+    bottom: 0,
+    width: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
     fontFamily: 'Archivo_600SemiBold',

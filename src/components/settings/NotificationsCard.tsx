@@ -3,6 +3,11 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Toggle } from '@/components/ui/Toggle';
 import { ApexTokens } from '@/constants/apexTokens';
+import {
+  useNotificationPrefs,
+  useUpdateNotificationPrefs,
+  DEFAULT_PREFS,
+} from '@/api/notificationPrefs';
 
 const ITEMS = [
   { key: 'deadlines', label: 'Deadlines', sub: 'Gameweek deadline reminders' },
@@ -19,22 +24,18 @@ interface NotificationsCardProps {
 
 export function NotificationsCard({ tk }: NotificationsCardProps) {
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<Record<Key, boolean>>({
-    deadlines: true,
-    prices: true,
-    gwConfirm: true,
-    transfer: false,
-  });
+  const { data, isPending } = useNotificationPrefs();
+  const { mutate, isError } = useUpdateNotificationPrefs();
+  const prefs = data ?? DEFAULT_PREFS;
 
-  const onCount = ITEMS.filter((it) => state[it.key]).length;
+  const onCount = ITEMS.filter((it) => prefs[it.key]).length;
   const allOn = onCount === ITEMS.length;
   const summary =
     onCount === 0 ? 'All off' : allOn ? 'All on' : `${onCount} of ${ITEMS.length} on`;
 
   const setAll = (v: boolean) =>
-    setState({ deadlines: v, prices: v, gwConfirm: v, transfer: v });
-  const setOne = (k: Key, v: boolean) =>
-    setState((s) => ({ ...s, [k]: v }));
+    mutate({ deadlines: v, prices: v, gwConfirm: v, transfer: v });
+  const setOne = (k: Key, v: boolean) => mutate({ [k]: v });
 
   return (
     <View style={styles.wrap}>
@@ -64,6 +65,12 @@ export function NotificationsCard({ tk }: NotificationsCardProps) {
           </View>
         </Pressable>
 
+        {isError && (
+          <Text style={[styles.errSub, { color: tk.pink }]}>
+            Couldn&apos;t save — try again
+          </Text>
+        )}
+
         {open && (
           <View>
             <View
@@ -78,7 +85,7 @@ export function NotificationsCard({ tk }: NotificationsCardProps) {
               </Text>
               <Toggle
                 value={allOn}
-                onChange={setAll}
+                onChange={isPending ? () => {} : setAll}
                 onColor={tk.green}
                 offColor={tk.track}
                 size="sm"
@@ -99,8 +106,8 @@ export function NotificationsCard({ tk }: NotificationsCardProps) {
                   </Text>
                 </View>
                 <Toggle
-                  value={state[it.key]}
-                  onChange={(v) => setOne(it.key, v)}
+                  value={prefs[it.key]}
+                  onChange={isPending ? () => {} : (v) => setOne(it.key, v)}
                   onColor={tk.green}
                   offColor={tk.track}
                   size="sm"
@@ -171,6 +178,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Archivo_500Medium',
     fontSize: 12,
     marginTop: 2,
+  },
+  errSub: {
+    fontFamily: 'Archivo_500Medium',
+    fontSize: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
   },
   allRow: {
     flexDirection: 'row',

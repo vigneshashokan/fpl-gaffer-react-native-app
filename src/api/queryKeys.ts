@@ -10,6 +10,7 @@ export const queryKeys = {
   eventLive:      (gw: number) => ['eventLive', gw] as const,
   fixtures:       (gw: number) => ['fixtures', gw] as const,
   profile:        (userId: string) => ['profile', userId] as const,
+  notificationPrefs: (userId: string) => ['notificationPrefs', userId] as const,
   manager:        (teamId: number) => ['manager', teamId] as const,
   managerHistory: (teamId: number) => ['managerHistory', teamId] as const,
   squad:          (teamId: number, gw: number) => ['squad', teamId, gw] as const,

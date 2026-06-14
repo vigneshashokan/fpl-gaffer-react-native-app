@@ -110,3 +110,39 @@ export async function resendVerification(email: string): Promise<Result> {
     return { ok: false, error: classifyThrown(err) };
   }
 }
+
+export async function changePassword(current: string, next: string): Promise<Result> {
+  // Read the current email from the local session (no network round-trip).
+  let email: string | undefined;
+  try {
+    const { data } = await supabase.auth.getSession();
+    email = data.session?.user.email ?? undefined;
+  } catch (err) {
+    return { ok: false, error: classifyThrown(err) };
+  }
+  if (!email) return { ok: false, error: 'unknown' };
+
+  // 1. Verify the current password AND freshen the session. This is what
+  //    satisfies Supabase's "require current password" / secure password
+  //    change. signInWithEmail already maps a wrong password to
+  //    invalid_credentials.
+  const verify = await signInWithEmail(email, current);
+  if (!verify.ok) return verify;
+
+  // 2. Update to the new password.
+  try {
+    const { error } = await supabase.auth.updateUser({ password: next });
+    if (error) return { ok: false, error: classify(error) };
+  } catch (err) {
+    return { ok: false, error: classifyThrown(err) };
+  }
+
+  // 3. Best-effort: invalidate other devices. Don't roll back if it fails.
+  try {
+    await supabase.auth.signOut({ scope: 'others' });
+  } catch (err) {
+    console.warn('[auth] signOut(others) after password change failed (non-fatal):', err);
+  }
+
+  return { ok: true, value: undefined };
+}

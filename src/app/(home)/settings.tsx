@@ -14,6 +14,8 @@ import { BiometricCard } from '@/components/settings/BiometricCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { FollowUsRow } from '@/components/settings/FollowUsRow';
 import { supabase } from '@/lib/supabase';
+import { shareApp, sendFeedback, openTerms } from '@/lib/external';
+import { FEEDBACK_EMAIL } from '@/constants/links';
 
 export default function SettingsModal() {
   const router = useRouter();
@@ -51,7 +53,9 @@ export default function SettingsModal() {
           <SettingsRow
             icon={<ShareIcon color={tk.faint} />}
             label="Share FPL Gaffer"
-            onPress={() => {}}
+            onPress={() => {
+              shareApp().catch(() => {});
+            }}
             tk={tk}
             trailing={<View />}
           />
@@ -59,14 +63,19 @@ export default function SettingsModal() {
           <SettingsRow
             icon={<FeedbackIcon color={tk.faint} />}
             label="Send Feedback"
-            onPress={() => {}}
+            onPress={async () => {
+              const { ok } = await sendFeedback();
+              if (!ok) Alert.alert('No mail app', `Email us at ${FEEDBACK_EMAIL}`);
+            }}
             tk={tk}
             showDivider
           />
           <SettingsRow
             icon={<TermsIcon color={tk.faint} />}
             label="Terms & Conditions"
-            onPress={() => {}}
+            onPress={() => {
+              openTerms().catch(() => {});
+            }}
             tk={tk}
             external
             showDivider

@@ -5,6 +5,21 @@ jest.mock('@/lib/auth/account-deletion', () => ({
   requestDeletion: () => mockRequestDeletion(),
 }));
 
+jest.mock('@/api/notificationPrefs', () => ({
+  __esModule: true,
+  useNotificationPrefs: () => ({
+    data: { deadlines: false, prices: false, gwConfirm: false, transfer: false },
+    isPending: false,
+  }),
+  useUpdateNotificationPrefs: () => ({ mutate: jest.fn(), isError: false }),
+}));
+
+const mockChangePassword = jest.fn();
+jest.mock('@/lib/auth/email', () => ({
+  __esModule: true,
+  changePassword: (cur: string, next: string) => mockChangePassword(cur, next),
+}));
+
 let mockSessionEmail: string | null = 'ada@example.com';
 jest.mock('@/store/authStore', () => ({
   __esModule: true,
@@ -42,7 +57,6 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { Toggle } from '@/components/ui/Toggle';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { ReadField } from '@/components/profile/ReadField';
-import { GenderRow } from '@/components/profile/GenderRow';
 import { ToggleRow } from '@/components/profile/ToggleRow';
 import { ChangePassword } from '@/components/profile/ChangePassword';
 import { DeleteAccount } from '@/components/profile/DeleteAccount';
@@ -591,11 +605,6 @@ describe('Profile components', () => {
     expect(getByText('Apex')).toBeTruthy();
   });
 
-  it('GenderRow shows current value', () => {
-    const { getByText } = render(<GenderRow value="Female" onChange={() => {}} tk={tk} />);
-    expect(getByText('Female')).toBeTruthy();
-  });
-
   it('ToggleRow shows label and sub', () => {
     const { getByText } = render(
       <ToggleRow label="Face ID" sub="Biometric sign-in" value onChange={() => {}} tk={tk} />
@@ -607,6 +616,38 @@ describe('Profile components', () => {
   it('ChangePassword renders collapsed', () => {
     const { getByText } = render(<ChangePassword tk={tk} />);
     expect(getByText('Change password')).toBeTruthy();
+  });
+
+  it('ChangePassword toggles password visibility with the eye button', () => {
+    const { getByText, getByPlaceholderText, getAllByLabelText } = render(<ChangePassword tk={tk} />);
+    fireEvent.press(getByText('Change password')); // expand
+
+    // Each field starts masked.
+    expect(getByPlaceholderText('Current password').props.secureTextEntry).toBe(true);
+
+    // Reveal the current-password field (first of the three eye buttons).
+    fireEvent.press(getAllByLabelText('Show password')[0]);
+    expect(getByPlaceholderText('Current password').props.secureTextEntry).toBe(false);
+    // The other fields stay masked (per-field toggle).
+    expect(getByPlaceholderText('New password').props.secureTextEntry).toBe(true);
+
+    // Toggling back re-masks it.
+    fireEvent.press(getAllByLabelText('Hide password')[0]);
+    expect(getByPlaceholderText('Current password').props.secureTextEntry).toBe(true);
+  });
+
+  it('ChangePassword shows an inline error when the current password is wrong', async () => {
+    mockChangePassword.mockResolvedValueOnce({ ok: false, error: 'invalid_credentials' });
+    const { getByText, getByPlaceholderText } = render(<ChangePassword tk={tk} />);
+
+    fireEvent.press(getByText('Change password')); // expand
+    fireEvent.changeText(getByPlaceholderText('Current password'), 'wrong');
+    fireEvent.changeText(getByPlaceholderText('New password'), 'NewPass1');
+    fireEvent.changeText(getByPlaceholderText('Confirm new password'), 'NewPass1');
+    fireEvent.press(getByText('Update password'));
+
+    await waitFor(() => expect(getByText('Current password is incorrect.')).toBeTruthy());
+    expect(mockChangePassword).toHaveBeenCalledWith('wrong', 'NewPass1');
   });
 
   it('DeleteAccount renders initial button', () => {
@@ -632,10 +673,10 @@ describe('Settings components', () => {
     expect(getByText('Pitch')).toBeTruthy();
   });
 
-  it('NotificationsCard renders header and summary', () => {
+  it('NotificationsCard renders summary from fetched prefs', () => {
     const { getByText } = render(<NotificationsCard tk={tk} />);
     expect(getByText('Notifications')).toBeTruthy();
-    expect(getByText('3 of 4 on')).toBeTruthy(); // default state
+    expect(getByText('All off')).toBeTruthy(); // driven by the mocked hook (all four off)
   });
 
   it('SettingsRow renders label', () => {

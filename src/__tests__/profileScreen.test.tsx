@@ -53,13 +53,20 @@ jest.mock('@/api/profile', () => ({
       firstName: 'Apex',
       lastName: 'Gaffer',
       dob: '14 Aug 1990',
-      gender: 'Prefer not to say',
       email: 'apex.gaffer@example.com',
       faceId: true,
       fplTeamId: null,
     },
     isPending: false,
   }),
+}));
+
+// ChangePassword (rendered by Profile) imports @/lib/auth/email, which pulls
+// in the real Supabase client (AsyncStorage native module) at import time.
+// Mock it so mounting Profile in jsdom doesn't load the native module.
+jest.mock('@/lib/auth/email', () => ({
+  __esModule: true,
+  changePassword: jest.fn().mockResolvedValue({ ok: true }),
 }));
 
 import Profile from '@/app/(home)/profile';
