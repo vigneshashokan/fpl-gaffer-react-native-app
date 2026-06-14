@@ -19,4 +19,10 @@ describe('availabilityState', () => {
   it('flags an available player with a sub-100 chance as doubt', () => {
     expect(availabilityState('a', 50)).toEqual({ severity: 'doubt' });
   });
+  it('flags an unavailable player as out', () => {
+    expect(availabilityState('u', null)).toEqual({ severity: 'out' });
+  });
+  it('flags a not-in-squad player as out', () => {
+    expect(availabilityState('n', null)).toEqual({ severity: 'out' });
+  });
 });
