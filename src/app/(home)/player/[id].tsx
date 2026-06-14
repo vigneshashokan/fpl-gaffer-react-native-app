@@ -73,29 +73,31 @@ export default function PlayerDetailModal() {
 
       <KeyStatsRow form={player.f} total={player.tp} ep={player.gw} ict={player.ict} bps={player.bps} tk={tk} />
 
-      <Text style={[styles.sectionTitle, { color: tk.text }]}>Last 5 gameweeks</Text>
       {summary.isError ? (
         <SummaryError tk={tk} onRetry={() => summary.refetch()} />
       ) : summary.data ? (
-        <FormSparkline points={last5FromHistory(summary.data.history)} tk={tk} />
+        <>
+          <Text style={[styles.sectionTitle, { color: tk.text }]}>Last 5 gameweeks</Text>
+          <FormSparkline points={last5FromHistory(summary.data.history)} tk={tk} />
+          <Text style={[styles.sectionTitle, { color: tk.text }]}>Next 5 fixtures</Text>
+          <FixtureStrip
+            fixtures={next5Fixtures(summary.data.fixtures)}
+            codeByTeamId={codeByTeamId ?? {}}
+            dark={dark}
+            tk={tk}
+          />
+        </>
       ) : (
-        <View style={{ paddingHorizontal: 16 }}>
-          <Skeleton height={80} radius={14} />
-        </View>
-      )}
-
-      <Text style={[styles.sectionTitle, { color: tk.text }]}>Next 5 fixtures</Text>
-      {summary.isError ? null : summary.data ? (
-        <FixtureStrip
-          fixtures={next5Fixtures(summary.data.fixtures)}
-          codeByTeamId={codeByTeamId ?? {}}
-          dark={dark}
-          tk={tk}
-        />
-      ) : (
-        <View style={{ paddingHorizontal: 16 }}>
-          <Skeleton height={48} radius={14} />
-        </View>
+        <>
+          <Text style={[styles.sectionTitle, { color: tk.text }]}>Last 5 gameweeks</Text>
+          <View style={{ paddingHorizontal: 16 }}>
+            <Skeleton height={80} radius={14} />
+          </View>
+          <Text style={[styles.sectionTitle, { color: tk.text }]}>Next 5 fixtures</Text>
+          <View style={{ paddingHorizontal: 16 }}>
+            <Skeleton height={48} radius={14} />
+          </View>
+        </>
       )}
     </ScrollView>
   );

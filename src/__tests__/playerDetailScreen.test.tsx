@@ -87,11 +87,22 @@ describe('Player detail screen', () => {
     expect(getByText('Player not found')).toBeTruthy();
   });
 
-  it('shows an inline retry when the summary fails', () => {
+  it('shows an inline retry and no orphan section headings when the summary fails', () => {
     const refetch = jest.fn();
     mockSummary = { isPending: false, isError: true, refetch, data: undefined };
-    const { getByText } = renderWithProviders(<PlayerDetail />);
+    const { getByText, queryByText } = renderWithProviders(<PlayerDetail />);
     fireEvent.press(getByText('Retry'));
     expect(refetch).toHaveBeenCalled();
+    expect(queryByText('Last 5 gameweeks')).toBeNull();
+    expect(queryByText('Next 5 fixtures')).toBeNull();
+  });
+
+  it('shows section headings and skeletons (no content, no retry) while the summary loads', () => {
+    mockSummary = { isPending: true, isError: false, refetch: jest.fn(), data: undefined };
+    const { getByText, queryByText } = renderWithProviders(<PlayerDetail />);
+    expect(getByText('Last 5 gameweeks')).toBeTruthy();
+    expect(getByText('Next 5 fixtures')).toBeTruthy();
+    expect(queryByText('Retry')).toBeNull();
+    expect(queryByText('ARS')).toBeNull();
   });
 });
