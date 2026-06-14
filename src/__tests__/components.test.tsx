@@ -162,6 +162,7 @@ import type { Player } from '@/types/fpl';
 const mockPlayer: Player = {
   id: 'p1', name: 'Haaland', club: 'MCI', pos: 'FWD',
   gw: 12, p: 15.0, f: 9.1, tp: 175, own: 62.3, capt: false, vice: false,
+  status: 'a', news: '', chanceNext: null, ict: 312.4, bps: 640,
 };
 
 describe('PlayerToken', () => {

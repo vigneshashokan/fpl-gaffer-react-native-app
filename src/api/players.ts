@@ -20,6 +20,11 @@ interface PlayerRow {
   total_points: number;
   selected_by_percent: string;
   ep_next: string;
+  status: string;
+  news: string;
+  chance_of_playing_next_round: number | null;
+  ict_index: string;
+  bps: number;
 }
 
 const safeFloat = (s: string): number => {
@@ -45,6 +50,11 @@ export function playersFromRows(
       tp: row.total_points,
       own: safeFloat(row.selected_by_percent),
       gw: safeFloat(row.ep_next),
+      status: row.status,
+      news: row.news,
+      chanceNext: row.chance_of_playing_next_round,
+      ict: safeFloat(row.ict_index),
+      bps: row.bps,
     });
   }
   return out;
@@ -53,7 +63,7 @@ export function playersFromRows(
 async function queryPlayers(): Promise<Player[]> {
   const [playersRes, clubsRes] = await Promise.all([
     supabase.from('players').select(
-      'id, web_name, team_id, position, now_cost, form, total_points, selected_by_percent, ep_next',
+      'id, web_name, team_id, position, now_cost, form, total_points, selected_by_percent, ep_next, status, news, chance_of_playing_next_round, ict_index, bps',
     ),
     supabase.from('clubs').select('id, short_name'),
   ]);

@@ -27,6 +27,11 @@ export interface Player {
   tp: number;
   own: number;
   gw: number;
+  status: string;
+  news: string;
+  chanceNext: number | null;
+  ict: number;
+  bps: number;
   capt?: boolean;
   vice?: boolean;
   sub?: number;
