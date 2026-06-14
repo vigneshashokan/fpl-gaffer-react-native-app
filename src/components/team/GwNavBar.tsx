@@ -65,6 +65,7 @@ function NavBtn({
 }) {
   return (
     <Pressable
+      testID={dir === 'l' ? 'gw-prev' : 'gw-next'}
       disabled={disabled}
       onPress={onPress}
       style={[
