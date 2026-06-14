@@ -15,4 +15,5 @@ export const queryKeys = {
   managerHistory: (teamId: number) => ['managerHistory', teamId] as const,
   squad:          (teamId: number, gw: number) => ['squad', teamId, gw] as const,
   elementSummary: (id: string) => ['elementSummary', id] as const,
+  clubsByTeamId:  ['clubsByTeamId'] as const,
 };
