@@ -9,7 +9,7 @@ import {
 import { ApexPitchMarks } from './ApexPitchMarks';
 import { AvatarDisc } from '@/components/ui/AvatarDisc';
 import { PointPill } from '@/components/ui/PointPill';
-import { CaptBadge } from '@/components/ui/CaptBadge';
+import { CaptBadge, ViceBadge } from '@/components/ui/CaptBadge';
 import {
   SubPill,
   SubInPill,
@@ -103,6 +103,7 @@ function ApexPitchPlayerCard({
       <View style={[styles.avatarWrapper, { width: wrapperSize, height: wrapperSize }]}>
         <AvatarDisc size={avatarSize} player={p} />
         {p.capt && <CaptBadge />}
+        {p.vice && <ViceBadge />}
         {!upcoming && p.cards && p.cards.length > 0 && <CardIcons cards={p.cards} />}
         {!upcoming && p.ball && <BallBadge />}
         {!upcoming && p.sub != null && <SubPill min={p.sub} />}
