@@ -19,9 +19,15 @@ interface PicksCardProps {
   dark: boolean;
   fixtures: Partial<Record<ClubCode, Fixture>>;
   squadNames: Set<string>;
+  selectable?: boolean;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
 }
 
-export function PicksCard({ pos, rows, tk, dark, fixtures, squadNames }: PicksCardProps) {
+export function PicksCard({
+  pos, rows, tk, dark, fixtures, squadNames,
+  selectable = false, selectedId = null, onSelect,
+}: PicksCardProps) {
   return (
     <View
       style={[
@@ -56,6 +62,7 @@ export function PicksCard({ pos, rows, tk, dark, fixtures, squadNames }: PicksCa
         <View style={styles.colHeaderXp}>
           <Text style={[styles.colLabelXp, { color: tk.purple }]}>xPts</Text>
         </View>
+        {selectable && <View style={styles.colHeaderIn} />}
       </View>
 
       {rows.map((p, i) => (
@@ -68,6 +75,9 @@ export function PicksCard({ pos, rows, tk, dark, fixtures, squadNames }: PicksCa
           dark={dark}
           fixtures={fixtures}
           squadNames={squadNames}
+          selectable={selectable}
+          selectedId={selectedId}
+          onSelect={onSelect}
         />
       ))}
     </View>
@@ -167,5 +177,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Archivo_800ExtraBold',
     fontSize: 11,
     letterSpacing: 0.55,
+  },
+  colHeaderIn: {
+    flex: 0.6,
   },
 });
