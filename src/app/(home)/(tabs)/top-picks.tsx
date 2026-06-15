@@ -22,6 +22,7 @@ import {
 } from '@/api/fixtures';
 import { useSquad } from '@/api/squad';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { TabHeader } from '@/components/ui/TabHeader';
 import { Icon } from '@/components/ui/Icon';
 import { SegmentedControl } from '@/components/picks/SegmentedControl';
 import { PicksCard } from '@/components/picks/PicksCard';
@@ -76,17 +77,16 @@ export default function TopPicksTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: tk.bg }}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.title, { color: tk.text }]}>Top Picks</Text>
-          <StatusPill state={seasonState} seasonLabel={seasonLabel} tk={tk} />
-        </View>
-        <Text style={[styles.subtitle, { color: tk.variant }]}>
-          {seasonState?.kind === 'complete'
+      <TabHeader
+        title="Top Picks"
+        tk={tk}
+        trailing={<StatusPill state={seasonState} seasonLabel={seasonLabel} tk={tk} />}
+        subtitle={
+          seasonState?.kind === 'complete'
             ? 'The season has ended — picks resume next campaign.'
-            : 'Top Picks will refresh once the current game week is done.'}
-        </Text>
-      </View>
+            : 'Top Picks will refresh once the current game week is done.'
+        }
+      />
 
       <View style={styles.controlWrap}>
         <SegmentedControl
@@ -164,23 +164,6 @@ function StatusPill({
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 14,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    marginBottom: 5,
-  },
-  title: {
-    fontFamily: 'Archivo_800ExtraBold',
-    fontSize: 24,
-    letterSpacing: -0.48,
-    lineHeight: 32,
-  },
   livePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -198,11 +181,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Archivo_700Bold',
     fontSize: 10,
     letterSpacing: 0.7,
-  },
-  subtitle: {
-    fontFamily: 'Archivo_400Regular',
-    fontSize: 13.5,
-    lineHeight: 19,
   },
   controlWrap: {
     paddingHorizontal: 16,

@@ -9,6 +9,7 @@ import { useApexTeam } from '@/api/squad';
 import { useSeasonState } from '@/api/fixtures';
 import { LinkTeamCta } from '@/components/team/LinkTeamCta';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { TabHeader } from '@/components/ui/TabHeader';
 import { TransferInfoCard } from '@/components/transfer/TransferInfoCard';
 import { DeadlineBanner } from '@/components/transfer/DeadlineBanner';
 import { TransferPitch } from '@/components/transfer/TransferPitch';
@@ -75,6 +76,7 @@ export default function TransferTab() {
 
   return (
     <View style={{ flex: 1, backgroundColor: tk.bg }}>
+      <TabHeader title="Transfer" tk={tk} />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[
