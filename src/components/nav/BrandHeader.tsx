@@ -6,6 +6,8 @@ import { GafferLogo } from '@/components/ui/GafferLogo';
 import { AccountMenu } from './AccountMenu';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
+import { useProfile } from '@/api/profile';
+import { initialsOf } from '@/lib/name';
 import { getTheme } from '@/constants/theme';
 
 export function BrandHeader() {
@@ -15,6 +17,8 @@ export function BrandHeader() {
   const t = getTheme(paletteKey, dark);
   const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: profile } = useProfile();
+  const initials = initialsOf(profile?.firstName, profile?.lastName);
 
   return (
     <View
@@ -33,7 +37,7 @@ export function BrandHeader() {
           onPress={() => setMenuOpen(true)}
           style={[styles.avatar, { backgroundColor: t.primary }]}
         >
-          <Text style={styles.avatarText}>AG</Text>
+          <Text style={styles.avatarText}>{initials}</Text>
         </Pressable>
       </View>
       <AccountMenu
