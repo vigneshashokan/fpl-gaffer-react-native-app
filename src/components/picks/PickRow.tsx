@@ -64,11 +64,13 @@ export function PickRow({
               testID={`stats-${p.id}`}
               onPress={openStats}
               hitSlop={10}
-              style={styles.jerseyBtn}
+              style={[styles.jerseyBtn, { borderColor: tk.line }]}
             >
               <Image source={jersey} style={styles.jersey} resizeMode="contain" />
-              <View style={styles.iBadge}>
-                <Text style={styles.iText}>i</Text>
+              <View style={styles.iWrap} pointerEvents="none">
+                <View style={styles.iBadge}>
+                  <Text style={styles.iText}>i</Text>
+                </View>
               </View>
             </Pressable>
           ) : (
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 13,
-    paddingLeft: 11,
+    paddingLeft: 6,
     paddingRight: 10,
     gap: 6,
   },
@@ -185,17 +187,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   jerseyBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
   },
-  iBadge: {
+  iWrap: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 17,
-    height: 17,
-    borderRadius: 8.5,
+    left: 0,
+    right: 0,
+    bottom: -7,
+    alignItems: 'center',
+  },
+  iBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(15,20,31,0.92)',
@@ -205,8 +215,8 @@ const styles = StyleSheet.create({
   iText: {
     fontFamily: 'Archivo_700Bold',
     fontStyle: 'italic',
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 10.5,
+    lineHeight: 12,
     color: '#fff',
   },
 });
