@@ -14,12 +14,19 @@ interface PickRowProps {
   dark: boolean;
   fixtures: Partial<Record<ClubCode, Fixture>>;
   squadNames: Set<string>;
+  selectable?: boolean;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
 }
 
-export function PickRow({ p, zebra, last, tk, dark, fixtures, squadNames }: PickRowProps) {
+export function PickRow({
+  p, zebra, last, tk, dark, fixtures, squadNames,
+  selectable = false, selectedId = null, onSelect,
+}: PickRowProps) {
   const router = useRouter();
   const fx = fixtures[p.club] ?? { opp: '—' as unknown as ClubCode, h: true };
   const owned = squadNames.has(p.name);
+  const selected = selectedId === p.id;
   const xp = xPtsOf(p);
   const xpC = xpColor(xp, dark);
   const accentBar = owned
@@ -76,6 +83,26 @@ export function PickRow({ p, zebra, last, tk, dark, fixtures, squadNames }: Pick
       <View style={styles.xpCell}>
         <Text style={[styles.statBold, { color: xpC }]}>{Math.round(xp)}</Text>
       </View>
+
+      {selectable && (
+        <View style={styles.inCell}>
+          {!owned && (
+            <Pressable
+              testID={`in-pill-${p.id}`}
+              onPress={() => onSelect?.(p.id)}
+              hitSlop={8}
+              style={[
+                styles.inPill,
+                selected
+                  ? { backgroundColor: tk.green }
+                  : { backgroundColor: tk.greenSoft, borderColor: tk.green, borderWidth: 1 },
+              ]}
+            >
+              <Text style={[styles.inText, { color: selected ? '#fff' : tk.green }]}>IN</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -155,5 +182,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: -0.32,
     textAlign: 'center',
+  },
+  inCell: {
+    flex: 0.6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  inPill: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  inText: {
+    fontFamily: 'Archivo_800ExtraBold',
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
 });
