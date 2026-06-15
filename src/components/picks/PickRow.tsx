@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import type { TopPickPlayer, Fixture, ClubCode } from '@/types/fpl';
-import { jerseyForClub } from '@/constants/jerseys';
 import { ApexTokens } from '@/constants/apexTokens';
+import { jerseyForClub } from '@/constants/jerseys';
+import type { ClubCode, Fixture, TopPickPlayer } from '@/types/fpl';
 import { xPtsOf, xpColor } from '@/utils/xpts';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface PickRowProps {
   p: TopPickPlayer;
@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   jerseyBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',

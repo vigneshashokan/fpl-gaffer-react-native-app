@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { ApexTokens } from '@/constants/apexTokens';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface ConfirmTransferBarProps {
   outName: string;
@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: 16,
     borderWidth: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     shadowColor: '#000',
     shadowOpacity: 0.22,
     shadowRadius: 22,
@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
   in: { fontFamily: 'Archivo_800ExtraBold', fontSize: 15 },
   btn: {
     borderRadius: 12,
-    height: 48,
-    paddingHorizontal: 18,
+    height: 42,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
