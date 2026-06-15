@@ -126,11 +126,12 @@ export function GameweekScreen({
         )}
 
         <HeroCard
-          teamName={at.teamName}
+          tk={tk}
           totalPoints={at.totalPoints}
           gwPts={at.gwPts}
           avgPoints={at.avgPoints}
           highestPoints={at.highestPoints}
+          chipPlayed={activeChip?.name}
           gwInProgress={!at.gwFinished}
           gradFrom={heroFrom}
           gradTo={heroTo}
