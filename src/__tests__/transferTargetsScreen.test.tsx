@@ -56,16 +56,25 @@ describe('TransferTargetsScreen', () => {
     expect(getAllByText('Haaland').length).toBeGreaterThan(0);
   });
 
-  it('does not show the Confirm bar until a target is selected', () => {
-    const { queryByText, getByTestId, getByText } = render(<TransferTargetsScreen />);
+  it('does not show the Confirm bar until a target row is selected', () => {
+    const { queryByText, getByText } = render(<TransferTargetsScreen />);
     expect(queryByText('Confirm transfer')).toBeNull();
-    fireEvent.press(getByTestId('in-pill-500'));
+    fireEvent.press(getByText('Wood')); // tap the row body to select
     getByText('Confirm transfer');
   });
 
-  it('keeps owned players non-selectable', () => {
-    const { queryByTestId } = render(<TransferTargetsScreen />);
-    expect(queryByTestId('in-pill-401')).toBeNull(); // Haaland is in the squad
+  it('opens player stats when a non-owned target jersey is pressed', () => {
+    const { getByTestId } = render(<TransferTargetsScreen />);
+    fireEvent.press(getByTestId('stats-500'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/(home)/player/[id]', params: { id: '500' } });
+  });
+
+  it('owned players are not selectable — pressing the row opens stats, not the Confirm bar', () => {
+    const { getByText, queryByText, queryByTestId } = render(<TransferTargetsScreen />);
+    expect(queryByTestId('stats-401')).toBeNull(); // owned row has no jersey stats button
+    fireEvent.press(getByText('In team'));         // owned row body
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/(home)/player/[id]', params: { id: '401' } });
+    expect(queryByText('Confirm transfer')).toBeNull();
   });
 
   it('renders a not-found fallback for an unknown id', () => {

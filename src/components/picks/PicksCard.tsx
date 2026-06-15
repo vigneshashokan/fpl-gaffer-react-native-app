@@ -62,7 +62,6 @@ export function PicksCard({
         <View style={styles.colHeaderXp}>
           <Text style={[styles.colLabelXp, { color: tk.purple }]}>xPts</Text>
         </View>
-        {selectable && <View style={styles.colHeaderIn} />}
       </View>
 
       {rows.map((p, i) => (
@@ -177,8 +176,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Archivo_800ExtraBold',
     fontSize: 11,
     letterSpacing: 0.55,
-  },
-  colHeaderIn: {
-    flex: 0.6,
   },
 });

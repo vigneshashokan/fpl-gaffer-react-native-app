@@ -75,6 +75,9 @@ export default function TransferTargetsScreen() {
         contentContainerStyle={[{ padding: 16, gap: 16 }, selectedIn && { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={[styles.hint, { color: tk.faint }]}>
+          Tap to transfer · tap jersey for stats
+        </Text>
         <TransferOutCard
           name={out.name}
           clubName={clubName}
@@ -118,4 +121,11 @@ const styles = StyleSheet.create({
   closeBtn: { borderRadius: 999, paddingHorizontal: 22, paddingVertical: 13 },
   closeText: { color: '#fff', fontFamily: 'Archivo_800ExtraBold', fontSize: 15 },
   barWrap: { position: 'absolute', left: 16, right: 16, bottom: 24, zIndex: 20 },
+  hint: {
+    textAlign: 'center',
+    fontFamily: 'Archivo_500Medium',
+    fontStyle: 'italic',
+    fontSize: 13,
+    marginBottom: -2,
+  },
 });

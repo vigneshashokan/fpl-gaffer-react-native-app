@@ -27,20 +27,28 @@ export function PickRow({
   const fx = fixtures[p.club] ?? { opp: '—' as unknown as ClubCode, h: true };
   const owned = squadNames.has(p.name);
   const selected = selectedId === p.id;
+  // On the transfer screen a non-owned row IS the "select for transfer" target;
+  // stats move onto the jersey (tap the kit). Everywhere else — and for owned
+  // rows, which can't be transferred in — the whole row opens stats.
+  const selectableActive = selectable && !owned;
   const xp = xPtsOf(p);
   const xpC = xpColor(xp, dark);
-  const accentBar = owned
-    ? (dark ? '#DDD6FE' : '#C4B5FD')
-    : (dark ? '#A78BFA' : '#7C3AED');
+  const accentBar = selected
+    ? tk.green
+    : owned
+      ? (dark ? '#DDD6FE' : '#C4B5FD')
+      : (dark ? '#A78BFA' : '#7C3AED');
   const jersey = jerseyForClub(p.club);
+  const openStats = () =>
+    router.push({ pathname: '/(home)/player/[id]', params: { id: p.id } });
 
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/(home)/player/[id]', params: { id: p.id } })}
+      onPress={selectableActive ? () => onSelect?.(p.id) : openStats}
       style={[
         styles.row,
         {
-          backgroundColor: zebra ? tk.zebra : 'transparent',
+          backgroundColor: selected ? tk.greenSoft : zebra ? tk.zebra : 'transparent',
           borderBottomColor: tk.line,
           borderBottomWidth: last ? 0 : 1,
           opacity: owned ? 0.5 : 1,
@@ -50,9 +58,22 @@ export function PickRow({
       <View style={[styles.accentBar, { backgroundColor: accentBar }]} />
       {/* Player cell */}
       <View style={styles.playerCell}>
-        {jersey && (
-          <Image source={jersey} style={styles.jersey} resizeMode="contain" />
-        )}
+        {jersey &&
+          (selectableActive ? (
+            <Pressable
+              testID={`stats-${p.id}`}
+              onPress={openStats}
+              hitSlop={10}
+              style={styles.jerseyBtn}
+            >
+              <Image source={jersey} style={styles.jersey} resizeMode="contain" />
+              <View style={styles.iBadge}>
+                <Text style={styles.iText}>i</Text>
+              </View>
+            </Pressable>
+          ) : (
+            <Image source={jersey} style={styles.jersey} resizeMode="contain" />
+          ))}
         <View style={{ flexShrink: 1, minWidth: 0 }}>
           {owned && (
             <View
@@ -83,26 +104,6 @@ export function PickRow({
       <View style={styles.xpCell}>
         <Text style={[styles.statBold, { color: xpC }]}>{Math.round(xp)}</Text>
       </View>
-
-      {selectable && (
-        <View style={styles.inCell}>
-          {!owned && (
-            <Pressable
-              testID={`in-pill-${p.id}`}
-              onPress={() => onSelect?.(p.id)}
-              hitSlop={8}
-              style={[
-                styles.inPill,
-                selected
-                  ? { backgroundColor: tk.green }
-                  : { backgroundColor: tk.greenSoft, borderColor: tk.green, borderWidth: 1 },
-              ]}
-            >
-              <Text style={[styles.inText, { color: selected ? '#fff' : tk.green }]}>IN</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
     </Pressable>
   );
 }
@@ -183,22 +184,29 @@ const styles = StyleSheet.create({
     letterSpacing: -0.32,
     textAlign: 'center',
   },
-  inCell: {
-    flex: 0.6,
+  jerseyBtn: {
+    width: 40,
+    height: 40,
+    position: 'relative',
+  },
+  iBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 17,
+    height: 17,
+    borderRadius: 8.5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
+    backgroundColor: 'rgba(15,20,31,0.92)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
   },
-  inPill: {
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    minWidth: 40,
-    alignItems: 'center',
-  },
-  inText: {
-    fontFamily: 'Archivo_800ExtraBold',
-    fontSize: 12,
-    letterSpacing: 0.5,
+  iText: {
+    fontFamily: 'Archivo_700Bold',
+    fontStyle: 'italic',
+    fontSize: 11,
+    lineHeight: 13,
+    color: '#fff',
   },
 });

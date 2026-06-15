@@ -17,33 +17,41 @@ const base = { p: PLAYER, zebra: false, last: true, tk, dark: true, fixtures: {}
 describe('PickRow select-for-transfer', () => {
   beforeEach(() => mockPush.mockReset());
 
-  it('shows an IN pill for a non-owned selectable row and fires onSelect (no nav)', () => {
+  it('selects (does not navigate) when a non-owned selectable row body is pressed', () => {
     const onSelect = jest.fn();
-    const { getByTestId } = render(
+    const { getByText } = render(
       <PickRow {...base} squadNames={new Set()} selectable selectedId={null} onSelect={onSelect} />,
     );
-    fireEvent.press(getByTestId('in-pill-401'));
+    fireEvent.press(getByText('Haaland'));
     expect(onSelect).toHaveBeenCalledWith('401');
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('still navigates to stats when the row body is pressed', () => {
-    const { getByText } = render(
-      <PickRow {...base} squadNames={new Set()} selectable selectedId={null} onSelect={jest.fn()} />,
+  it('opens stats (does not select) when the jersey "i" is pressed', () => {
+    const onSelect = jest.fn();
+    const { getByTestId } = render(
+      <PickRow {...base} squadNames={new Set()} selectable selectedId={null} onSelect={onSelect} />,
     );
+    fireEvent.press(getByTestId('stats-401'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/(home)/player/[id]', params: { id: '401' } });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('owned (in team) rows are not selectable and have no jersey stats button — the row opens stats', () => {
+    const onSelect = jest.fn();
+    const { getByText, queryByTestId } = render(
+      <PickRow {...base} squadNames={new Set(['Haaland'])} selectable selectedId={null} onSelect={onSelect} />,
+    );
+    expect(queryByTestId('stats-401')).toBeNull();
     fireEvent.press(getByText('Haaland'));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/(home)/player/[id]', params: { id: '401' } });
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('hides the IN pill for an owned (in team) row', () => {
-    const { queryByTestId } = render(
-      <PickRow {...base} squadNames={new Set(['Haaland'])} selectable selectedId={null} onSelect={jest.fn()} />,
-    );
-    expect(queryByTestId('in-pill-401')).toBeNull();
-  });
-
-  it('renders no IN pill when not selectable (Top Picks default)', () => {
-    const { queryByTestId } = render(<PickRow {...base} squadNames={new Set()} />);
-    expect(queryByTestId('in-pill-401')).toBeNull();
+  it('navigates to stats on row press when not selectable (Top Picks default), with no jersey button', () => {
+    const { getByText, queryByTestId } = render(<PickRow {...base} squadNames={new Set()} />);
+    expect(queryByTestId('stats-401')).toBeNull();
+    fireEvent.press(getByText('Haaland'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/(home)/player/[id]', params: { id: '401' } });
   });
 });
