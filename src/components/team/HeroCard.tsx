@@ -9,7 +9,6 @@ interface HeroCardProps {
   gwPts: number;
   avgPoints: number;
   highestPoints: number;
-  chipPlayed?: string;
   gwInProgress?: boolean;
   gradFrom: string;
   gradTo: string;
@@ -21,7 +20,6 @@ export function HeroCard({
   gwPts,
   avgPoints,
   highestPoints,
-  chipPlayed,
   gwInProgress,
   gradFrom,
   gradTo,
@@ -44,43 +42,26 @@ export function HeroCard({
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.inner}>
-        <View style={styles.topRow}>
-          <View style={[styles.topCol, styles.topColWide]}>
-            <Text style={styles.gwBig}>{gwPts}</Text>
-            <Text style={styles.label}>GW PTS</Text>
-            {showVsAvg && (
-              <View
+        <View style={styles.gwBlock}>
+          <Text style={styles.gwBig}>{gwPts}</Text>
+          <Text style={styles.label}>GW PTS</Text>
+          {showVsAvg && (
+            <View
+              style={[
+                styles.vsAvgPill,
+                { backgroundColor: up ? tk.greenSoft : 'rgba(255,255,255,0.12)' },
+              ]}
+            >
+              <Text
                 style={[
-                  styles.vsAvgPill,
-                  { backgroundColor: up ? tk.greenSoft : 'rgba(255,255,255,0.12)' },
+                  styles.vsAvgText,
+                  { color: up ? tk.green : 'rgba(255,255,255,0.7)' },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.vsAvgText,
-                    { color: up ? tk.green : 'rgba(255,255,255,0.7)' },
-                  ]}
-                >
-                  {vsAvgText}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.topDivider} />
-
-          <View style={styles.topCol}>
-            <Text
-              style={[
-                styles.chipValue,
-                { color: chipPlayed ? '#fff' : 'rgba(255,255,255,0.5)' },
-              ]}
-              numberOfLines={2}
-            >
-              {chipPlayed ?? 'None'}
-            </Text>
-            <Text style={styles.label}>Chip Played</Text>
-          </View>
+                {vsAvgText}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.divider} />
@@ -121,22 +102,8 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 18,
   },
-  topRow: {
-    flexDirection: 'row',
+  gwBlock: {
     alignItems: 'center',
-  },
-  topCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  // GW points take 2/3 of the top row; chip played takes the remaining 1/3.
-  topColWide: {
-    flex: 2,
-  },
-  topDivider: {
-    width: 1,
-    height: 96,
-    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   label: {
     fontFamily: 'Archivo_700Bold',
@@ -152,13 +119,6 @@ const styles = StyleSheet.create({
     lineHeight: 60,
     letterSpacing: -1.74,
     color: '#fff',
-  },
-  chipValue: {
-    fontFamily: 'Archivo_800ExtraBold',
-    fontSize: 26,
-    lineHeight: 30,
-    letterSpacing: -0.52,
-    textAlign: 'center',
   },
   vsAvgPill: {
     marginTop: 10,

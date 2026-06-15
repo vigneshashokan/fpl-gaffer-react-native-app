@@ -342,7 +342,7 @@ describe('ApexPitch', () => {
 describe('HeroCard', () => {
   const tk = apexTokens(true, 'classic');
 
-  it('shows GW points, the vs-avg pill, "None" chip, and the stat row', () => {
+  it('shows centered GW points with the vs-avg pill and the stat row, no chip section', () => {
     const { getByText, queryByText } = render(
       <HeroCard
         tk={tk}
@@ -355,29 +355,14 @@ describe('HeroCard', () => {
       />
     );
     expect(getByText('64')).toBeTruthy();            // GW PTS
-    expect(getByText('None')).toBeTruthy();          // no chip played
     expect(getByText('↑ +12 vs avg')).toBeTruthy();  // 64 - 52
     expect(getByText('52')).toBeTruthy();            // avg
     expect(getByText('118')).toBeTruthy();           // highest
     expect(getByText('1,452')).toBeTruthy();         // total
-    expect(queryByText('Apex Pitch FC')).toBeNull(); // team name removed
-  });
-
-  it('shows the chip name when a chip was played', () => {
-    const { getByText, queryByText } = render(
-      <HeroCard
-        tk={tk}
-        totalPoints={1452}
-        gwPts={64}
-        avgPoints={52}
-        highestPoints={118}
-        chipPlayed="Bench Boost"
-        gradFrom="#37003C"
-        gradTo="#5B0F63"
-      />
-    );
-    expect(getByText('Bench Boost')).toBeTruthy();
+    // chip section moved out of the hero card (shown in the banner below)
     expect(queryByText('None')).toBeNull();
+    expect(queryByText('Chip Played')).toBeNull();
+    expect(queryByText('Apex Pitch FC')).toBeNull(); // team name removed
   });
 });
 
