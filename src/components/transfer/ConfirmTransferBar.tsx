@@ -17,7 +17,7 @@ export function ConfirmTransferBar({ outName, inName, onConfirm, tk }: ConfirmTr
         <Text style={[styles.arrow, { color: tk.faint }]}> → </Text>
         <Text style={[styles.in, { color: tk.green }]} numberOfLines={1}>{inName}</Text>
       </View>
-      <Pressable onPress={onConfirm} style={[styles.btn, { backgroundColor: tk.purpleD }]}>
+      <Pressable onPress={onConfirm} style={[styles.btn, { backgroundColor: tk.activeFill }]}>
         <Text style={styles.btnText}>Confirm transfer</Text>
       </Pressable>
     </View>
