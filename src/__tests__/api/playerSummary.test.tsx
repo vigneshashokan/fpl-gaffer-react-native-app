@@ -142,6 +142,22 @@ describe('gwFixtureLines', () => {
       { label: 'Yellow card', points: -1 },
     ]);
   });
+
+  it('gives a goalkeeper 1pt per 3 saves with the raw count in the label', () => {
+    const row = baseRow({ minutes: 90, saves: 3, total_points: 3 });
+    expect(gwFixtureLines(row, 'GKP')).toEqual([
+      { label: "Played 90'", points: 2 },
+      { label: 'Saves (3)', points: 1 },
+    ]);
+  });
+
+  it('scores a goalkeeper penalty save at 5', () => {
+    const row = baseRow({ minutes: 90, penalties_saved: 1, total_points: 7 });
+    expect(gwFixtureLines(row, 'GKP')).toEqual([
+      { label: "Played 90'", points: 2 },
+      { label: 'Penalty save', points: 5 },
+    ]);
+  });
 });
 
 describe('gwBreakdown', () => {
@@ -170,7 +186,11 @@ describe('gwBreakdown', () => {
       baseRow({ round: 6, minutes: 75, goals_scored: 1, total_points: 6 }),
     ];
     const result = gwBreakdown(dgw, 6, 'MID');
-    if (result.state === 'result') expect(result.fixtures).toHaveLength(2);
-    else throw new Error('expected result state');
+    if (result.state !== 'result') throw new Error('expected result state');
+    expect(result.fixtures).toHaveLength(2);
+    expect(result.fixtures[0].played).toBe(true);
+    expect(result.fixtures[0].points).toBe(2);
+    expect(result.fixtures[1].points).toBe(6);
+    expect(result.fixtures[1].lines.some((l) => l.label === 'Goal')).toBe(true);
   });
 });

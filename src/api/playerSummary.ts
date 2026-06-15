@@ -143,12 +143,15 @@ export function gwFixtureLines(row: SummaryHistoryRow, pos: Position): GwStatLin
     lines.push({ label: `Assist${times(row.assists)}`, points: 3 * row.assists });
   if (row.clean_sheets > 0 && CLEAN_SHEET_PTS[pos] > 0)
     lines.push({ label: 'Clean sheet', points: CLEAN_SHEET_PTS[pos] });
+  // Saves are batched (+1 per 3) — show the raw count in parens, not a ×N multiplier.
   if (pos === 'GKP' && row.saves >= 3)
-    lines.push({ label: `Saves${times(row.saves)}`, points: Math.floor(row.saves / 3) });
+    lines.push({ label: `Saves (${row.saves})`, points: Math.floor(row.saves / 3) });
   if (row.penalties_saved > 0)
     lines.push({ label: `Penalty save${times(row.penalties_saved)}`, points: 5 * row.penalties_saved });
+  // FPL only deducts for goals conceded from GKP and DEF, batched at −1 per 2 — show
+  // the raw count in parens, not a ×N multiplier.
   if ((pos === 'GKP' || pos === 'DEF') && row.goals_conceded >= 2)
-    lines.push({ label: `Goals conceded${times(row.goals_conceded)}`, points: -Math.floor(row.goals_conceded / 2) });
+    lines.push({ label: `Goals conceded (${row.goals_conceded})`, points: -Math.floor(row.goals_conceded / 2) });
   if (row.penalties_missed > 0)
     lines.push({ label: `Penalty miss${times(row.penalties_missed)}`, points: -2 * row.penalties_missed });
   if (row.yellow_cards > 0)
