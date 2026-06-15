@@ -45,7 +45,7 @@ export function HeroCard({
       />
       <View style={styles.inner}>
         <View style={styles.topRow}>
-          <View style={styles.topCol}>
+          <View style={[styles.topCol, styles.topColWide]}>
             <Text style={styles.gwBig}>{gwPts}</Text>
             <Text style={styles.label}>GW PTS</Text>
             {showVsAvg && (
@@ -128,6 +128,10 @@ const styles = StyleSheet.create({
   topCol: {
     flex: 1,
     alignItems: 'center',
+  },
+  // GW points take 2/3 of the top row; chip played takes the remaining 1/3.
+  topColWide: {
+    flex: 2,
   },
   topDivider: {
     width: 1,
