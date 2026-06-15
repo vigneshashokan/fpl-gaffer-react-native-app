@@ -50,7 +50,7 @@ import { PickRow } from '@/components/picks/PickRow';
 import { PicksCard } from '@/components/picks/PicksCard';
 import { TransferInfoCard } from '@/components/transfer/TransferInfoCard';
 import { DeadlineBanner } from '@/components/transfer/DeadlineBanner';
-import { SeasonCompleteBanner } from '@/components/transfer/SeasonCompleteBanner';
+import { SeasonCompleteBanner } from '@/components/ui/SeasonCompleteBanner';
 import { ChipsRow } from '@/components/transfer/ChipsRow';
 import { TransferPitch } from '@/components/transfer/TransferPitch';
 import { TransferSuggestionsCard } from '@/components/transfer/TransferSuggestionsCard';

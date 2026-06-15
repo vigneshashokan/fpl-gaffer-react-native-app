@@ -23,6 +23,7 @@ import {
 import { useSquad } from '@/api/squad';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { TabHeader } from '@/components/ui/TabHeader';
+import { SeasonCompleteBanner } from '@/components/ui/SeasonCompleteBanner';
 import { Icon } from '@/components/ui/Icon';
 import { SegmentedControl } from '@/components/picks/SegmentedControl';
 import { PicksCard } from '@/components/picks/PicksCard';
@@ -42,6 +43,7 @@ export default function TopPicksTab() {
   const gw = currentGw?.gw;
   const { data: seasonState }                       = useSeasonState();
   const seasonLabel = currentSeasonLabel();
+  const seasonOver = seasonState?.kind === 'complete';
   const { data: topPicks, isPending: picksPending } = useTopPicks();
   const { data: fixtures }                          = useFixturesByGw(gw ?? 0);
   const { data: squad }                             = useSquad();
@@ -80,13 +82,21 @@ export default function TopPicksTab() {
       <TabHeader
         title="Top Picks"
         tk={tk}
-        trailing={<StatusPill state={seasonState} seasonLabel={seasonLabel} tk={tk} />}
+        trailing={
+          seasonOver ? undefined : (
+            <StatusPill state={seasonState} seasonLabel={seasonLabel} tk={tk} />
+          )
+        }
         subtitle={
-          seasonState?.kind === 'complete'
-            ? 'The season has ended — picks resume next campaign.'
-            : 'Top Picks will refresh once the current game week is done.'
+          seasonOver ? undefined : 'Top Picks will refresh once the current game week is done.'
         }
       />
+
+      {seasonOver && (
+        <View style={styles.bannerWrap}>
+          <SeasonCompleteBanner seasonLabel={seasonLabel} tk={tk} />
+        </View>
+      )}
 
       <View style={styles.controlWrap}>
         <SegmentedControl
@@ -164,6 +174,10 @@ function StatusPill({
 }
 
 const styles = StyleSheet.create({
+  bannerWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+  },
   livePill: {
     flexDirection: 'row',
     alignItems: 'center',

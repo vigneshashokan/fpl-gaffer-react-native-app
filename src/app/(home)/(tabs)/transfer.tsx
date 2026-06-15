@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { TabHeader } from '@/components/ui/TabHeader';
 import { TransferInfoCard } from '@/components/transfer/TransferInfoCard';
 import { DeadlineBanner } from '@/components/transfer/DeadlineBanner';
-import { SeasonCompleteBanner } from '@/components/transfer/SeasonCompleteBanner';
+import { SeasonCompleteBanner } from '@/components/ui/SeasonCompleteBanner';
 import { TransferPitch } from '@/components/transfer/TransferPitch';
 import { TransferSuggestionsCard } from '@/components/transfer/TransferSuggestionsCard';
 import { ApplyAllCard } from '@/components/team/ApplyAllCard';
