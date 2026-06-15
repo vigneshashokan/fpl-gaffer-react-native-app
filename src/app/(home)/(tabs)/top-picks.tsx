@@ -53,7 +53,10 @@ export default function TopPicksTab() {
   );
 
   const goTo = (i: number) => {
-    setActive(i);
+    // Don't set `active` here. The animated scroll drives `active` via
+    // onScroll; jumping it to the target first makes the highlight flash the
+    // target, snap back to the origin (onScroll's first frame), then sweep —
+    // a flicker. Letting onScroll own `active` makes a tap animate like a swipe.
     scrollerRef.current?.scrollTo({ x: i * width, animated: true });
   };
 
