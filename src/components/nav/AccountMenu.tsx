@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
+import { useProfile } from '@/api/profile';
+import { useManager } from '@/api/manager';
+import { initialsOf } from '@/lib/name';
 import { getTheme } from '@/constants/theme';
 import { apexTokens } from '@/constants/apexTokens';
 import { Icon } from '@/components/ui/Icon';
@@ -25,6 +28,12 @@ export function AccountMenu({
   const t = getTheme(paletteKey, dark);
   const tk = apexTokens(dark, paletteKey);
 
+  const { data: profile } = useProfile();
+  const { data: manager } = useManager();
+  const fullName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ');
+  const initials = initialsOf(profile?.firstName, profile?.lastName);
+  const teamName = manager?.name;
+
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose} visible={visible}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
@@ -36,15 +45,17 @@ export function AccountMenu({
       >
         <View style={[styles.identity, { borderBottomColor: t.line }]}>
           <View style={[styles.avatar, { backgroundColor: t.primary }]}>
-            <Text style={styles.avatarText}>AG</Text>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
           <View style={{ flexShrink: 1 }}>
             <Text style={[styles.name, { color: t.text }]} numberOfLines={1}>
-              A. Gaffer
+              {fullName}
             </Text>
-            <Text style={[styles.team, { color: t.textMuted }]} numberOfLines={1}>
-              Apex Pitch FC
-            </Text>
+            {teamName ? (
+              <Text style={[styles.team, { color: t.textMuted }]} numberOfLines={1}>
+                {teamName}
+              </Text>
+            ) : null}
           </View>
         </View>
 

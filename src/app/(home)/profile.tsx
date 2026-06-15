@@ -5,6 +5,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { getTheme } from '@/constants/theme';
 import { apexTokens } from '@/constants/apexTokens';
 import { useProfile } from '@/api/profile';
+import { initialsOf } from '@/lib/name';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -30,7 +31,7 @@ export default function ProfileModal() {
     );
   }
 
-  const initials = `${profile.firstName[0] ?? ''}${profile.lastName[0] ?? ''}`;
+  const initials = initialsOf(profile.firstName, profile.lastName);
 
   const heroFrom = t.primary;
   const heroTo = dark ? '#0C1018' : '#5B0F63';
