@@ -88,9 +88,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Archivo_500Medium',
     fontSize: 12,
     letterSpacing: -0.12,
-    // Shrink within the pill's maxWidth so long names (Tarkowski, Casemiro)
-    // ellipsize instead of bleeding past the pill edge.
-    flexShrink: 1,
-    minWidth: 0,
+    // No flexShrink: the name keeps its full width so the pill grows to fit it
+    // (and overflows the fixed avatar slot) instead of truncating to the slot.
   },
 });
