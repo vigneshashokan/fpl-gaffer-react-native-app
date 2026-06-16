@@ -41,7 +41,7 @@ export function PointPill({
       {!upcoming && (
         <View style={[styles.num, { backgroundColor: numBg }]}>
           {hasBonus && (
-            <Svg width={28} height={28} viewBox="0 0 32 30" style={styles.star} testID="bonus-star">
+            <Svg width={22} height={22} viewBox="0 0 32 30" style={styles.star} testID="bonus-star">
               <Path
                 d="M16 2l4.2 8.6 9.5 1.4-6.9 6.7 1.6 9.5L16 23.7 7.5 28.2l1.6-9.5L2.2 12l9.5-1.4z"
                 fill="#FFC400"
@@ -97,12 +97,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  // Star is slightly larger than the 18×18 disc, so it bleeds a few px past
+  // Star is slightly larger than the 18×18 disc, so it bleeds a couple px past
   // the edge by design (overflow is visible in RN by default).
   star: {
     position: 'absolute',
-    top: -5,
-    left: -5,
+    top: -2,
+    left: -2,
   },
   numText: {
     fontFamily: 'JetBrainsMono_700Bold',
