@@ -65,7 +65,7 @@ function StatStack({
       style={[styles.statStack, side === 'right' ? styles.statRight : styles.statLeft]}
     >
       {Array.from({ length: shown }).map((_, i) => (
-        <View key={i} style={i === 0 ? undefined : styles.stackOverlap}>
+        <View key={i} style={[styles.icon, i !== 0 && styles.stackOverlap]}>
           <Icon size={15} />
         </View>
       ))}
@@ -135,32 +135,32 @@ const styles = StyleSheet.create({
   },
   cvBadgeVice: { borderWidth: 1, borderColor: '#C4B5FD' },
   cvText: { fontFamily: 'Archivo_800ExtraBold', fontSize: 10, color: '#7B09E5' },
+  // Bare positioning container — no dark badge behind the icons.
   statStack: {
     position: 'absolute',
-    bottom: -3,
-    height: 21,
-    borderRadius: 11,
-    backgroundColor: '#0B1224',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.22)',
+    bottom: -2,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
     zIndex: 3,
+  },
+  statRight: { right: -4 },
+  statLeft: { left: -4 },
+  stackOverlap: { marginLeft: -9 },
+  // Soft shadow so the bare icons stay legible against the jersey.
+  icon: {
     shadowColor: '#000',
     shadowOpacity: 0.55,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
   },
-  statRight: { right: -10 },
-  statLeft: { left: -10 },
-  stackOverlap: { marginLeft: -9 },
   stackOverflow: {
     fontFamily: 'JetBrainsMono_700Bold',
     fontSize: 9,
     color: '#fff',
     marginLeft: 1,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowRadius: 2,
   },
   cards: {
     position: 'absolute',
