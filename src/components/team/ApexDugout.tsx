@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { AvatarDisc } from '@/components/ui/AvatarDisc';
 import { PointPill } from '@/components/ui/PointPill';
@@ -10,9 +10,10 @@ interface ApexDugoutProps {
   card: string;
   cardBorder: string;
   faint: string;
+  onPlayerPress?: (p: PitchPlayer) => void;
 }
 
-export function ApexDugout({ players, card, cardBorder, faint }: ApexDugoutProps) {
+export function ApexDugout({ players, card, cardBorder, faint, onPlayerPress }: ApexDugoutProps) {
   return (
     <View style={[styles.container, { backgroundColor: card, borderColor: cardBorder }]}>
       <View style={styles.header}>
@@ -28,17 +29,38 @@ export function ApexDugout({ players, card, cardBorder, faint }: ApexDugoutProps
         <Text style={[styles.headerText, { color: faint }]}>Dugout</Text>
       </View>
       <View style={styles.row}>
-        {players.map((p) => (
-          <View key={p.name} style={styles.player}>
-            <View style={styles.avatarWrap}>
-              <AvatarDisc size={42} player={p} glyph={p.gk ? '#00E472' : '#A78BFA'} />
-              {p.alert && (
-                <View style={[styles.alert, { borderColor: card }]} />
-              )}
-            </View>
-            <PointPill pts={p.pts} name={p.name} />
-          </View>
-        ))}
+        {players.map((p) => {
+          const body = (
+            <>
+              <View style={styles.avatarWrap}>
+                <AvatarDisc size={42} player={p} glyph={p.gk ? '#00E472' : '#A78BFA'} />
+                {p.alert && (
+                  <View style={[styles.alert, { borderColor: card }]} />
+                )}
+              </View>
+              <PointPill pts={p.pts} name={p.name} />
+            </>
+          );
+          if (!onPlayerPress) {
+            return (
+              <View key={p.name} style={styles.player}>
+                {body}
+              </View>
+            );
+          }
+          return (
+            <Pressable
+              key={p.name}
+              style={({ pressed }) => [
+                styles.player,
+                pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
+              ]}
+              onPress={() => onPlayerPress(p)}
+            >
+              {body}
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
