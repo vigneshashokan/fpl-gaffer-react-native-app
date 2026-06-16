@@ -54,11 +54,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 3,
     backgroundColor: 'rgb(19,27,46)',
     borderRadius: 999,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingVertical: 1,
+    paddingLeft: 1,
+    paddingRight: 3,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
   },
@@ -87,5 +88,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Archivo_500Medium',
     fontSize: 12,
     letterSpacing: -0.12,
+    // Shrink within the pill's maxWidth so long names (Tarkowski, Casemiro)
+    // ellipsize instead of bleeding past the pill edge.
+    flexShrink: 1,
+    minWidth: 0,
   },
 });
