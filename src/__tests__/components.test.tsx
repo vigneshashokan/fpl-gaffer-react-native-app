@@ -68,7 +68,7 @@ import { SettingsRow } from '@/components/settings/SettingsRow';
 import { FollowUsRow } from '@/components/settings/FollowUsRow';
 import { ApplyCheckbox } from '@/components/ui/ApplyCheckbox';
 import { ApplyAllCard } from '@/components/team/ApplyAllCard';
-import { SubPill, SubInPill, BallBadge, CardIcons } from '@/components/ui/PitchBadges';
+import { SubPill, SubInPill, GoalsBadge, AssistsBadge, CardIcons } from '@/components/ui/PitchBadges';
 import { apexTokens } from '@/constants/apexTokens';
 import { PitchMarks } from '@/components/pitch/PitchMarks';
 import { ApexPitchMarks } from '@/components/pitch/ApexPitchMarks';
@@ -595,15 +595,17 @@ describe('ApplyAllCard', () => {
 
 // ── PitchBadges ───────────────────────────────────────────────
 describe('PitchBadges', () => {
-  it('renders sub badges and ball', () => {
-    const a = render(<SubPill min={75} />);
-    expect(a.getByText("←75'")).toBeTruthy();
-    const b = render(<SubInPill min={75} />);
-    expect(b.getByText("75'→")).toBeTruthy();
-    const c = render(<BallBadge />);
-    expect(c.toJSON()).toBeTruthy();
-    const d = render(<CardIcons cards={['yellow', 'red']} />);
-    expect(d.toJSON()).toBeTruthy();
+  it('renders sub badges, goal/assist stacks and cards', () => {
+    expect(render(<SubPill min={75} />).getByText("←75'")).toBeTruthy();
+    expect(render(<SubInPill min={75} />).getByText("75'→")).toBeTruthy();
+    expect(render(<GoalsBadge count={3} />).getByLabelText('3 goals')).toBeTruthy();
+    expect(render(<AssistsBadge count={2} />).getByLabelText('2 assists')).toBeTruthy();
+    const cards = render(<CardIcons cards={['yellow', 'red']} />);
+    expect(cards.getByTestId('card-yellow')).toBeTruthy();
+    expect(cards.getByTestId('card-red')).toBeTruthy();
+  });
+  it('renders nothing for a zero count', () => {
+    expect(render(<GoalsBadge count={0} />).toJSON()).toBeNull();
   });
 });
 

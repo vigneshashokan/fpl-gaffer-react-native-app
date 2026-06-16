@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { BallIcon, BootIcon } from './statIcons';
 
 const CARD_COLORS = { yellow: '#FFCD00', red: '#FF3B3B' };
 
@@ -20,20 +20,43 @@ export function SubInPill({ min }: { min: number }) {
   );
 }
 
-export function BallBadge() {
+const STACK_CAP = 4;
+
+export function GoalsBadge({ count }: { count: number }) {
+  return <StatStack count={count} side="right" label="goals" testID="goals-badge" Icon={BallIcon} />;
+}
+
+export function AssistsBadge({ count }: { count: number }) {
+  return <StatStack count={count} side="left" label="assists" testID="assists-badge" Icon={BootIcon} />;
+}
+
+function StatStack({
+  count,
+  side,
+  label,
+  testID,
+  Icon,
+}: {
+  count: number;
+  side: 'left' | 'right';
+  label: string;
+  testID: string;
+  Icon: React.ComponentType<{ size?: number; color?: string }>;
+}) {
+  if (count < 1) return null;
+  const shown = Math.min(count, STACK_CAP);
   return (
-    <View style={styles.ballWrap}>
-      <Svg width={14} height={14} viewBox="0 0 24 24">
-        <Circle cx={12} cy={12} r={10.5} fill="#fff" />
-        <Path d="M12 6.6l3.4 2.5-1.3 4h-4.2l-1.3-4z" fill="#0B1224" />
-        <Path
-          d="M12 3.6v3M5.8 8.4l2.6 1.1M18.2 8.4l-2.6 1.1M9 16.6l1.1-3.5M15 16.6l-1.1-3.5"
-          stroke="#0B1224"
-          strokeWidth={1.15}
-          fill="none"
-          strokeLinecap="round"
-        />
-      </Svg>
+    <View
+      testID={testID}
+      accessibilityLabel={`${count} ${label}`}
+      style={[styles.statStack, side === 'right' ? styles.statRight : styles.statLeft]}
+    >
+      {Array.from({ length: shown }).map((_, i) => (
+        <View key={i} style={i === 0 ? undefined : styles.stackOverlap}>
+          <Icon size={15} />
+        </View>
+      ))}
+      {count > STACK_CAP && <Text style={styles.stackOverflow}>{`·${count}`}</Text>}
     </View>
   );
 }
@@ -44,14 +67,8 @@ export function CardIcons({ cards }: { cards: Array<'yellow' | 'red'> }) {
       {cards.map((c, i) => (
         <View
           key={i}
-          style={[
-            styles.card,
-            {
-              backgroundColor: CARD_COLORS[c],
-              marginLeft: i === 0 ? 0 : -7,
-              transform: [{ rotate: '-12deg' }],
-            },
-          ]}
+          testID={`card-${c}`}
+          style={[styles.card, { backgroundColor: CARD_COLORS[c], right: i * 7, zIndex: i }]}
         />
       ))}
     </View>
@@ -81,18 +98,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     lineHeight: 13,
   },
-  ballWrap: {
+  statStack: {
     position: 'absolute',
-    right: -4,
-    bottom: 12,
-    width: 21,
+    bottom: -3,
     height: 21,
-    borderRadius: 10.5,
+    borderRadius: 11,
     backgroundColor: '#0B1224',
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.22)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
     zIndex: 3,
     shadowColor: '#000',
     shadowOpacity: 0.55,
@@ -100,19 +116,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
+  statRight: { right: -10 },
+  statLeft: { left: -10 },
+  stackOverlap: { marginLeft: -9 },
+  stackOverflow: {
+    fontFamily: 'JetBrainsMono_700Bold',
+    fontSize: 9,
+    color: '#fff',
+    marginLeft: 1,
+  },
   cards: {
     position: 'absolute',
     top: -7,
-    left: -9,
-    flexDirection: 'row',
-    zIndex: 3,
+    right: -6,
+    width: 24,
+    height: 20,
+    zIndex: 5,
   },
   card: {
+    position: 'absolute',
+    top: 0,
     width: 13,
     height: 17,
     borderRadius: 2.5,
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.15)',
+    transform: [{ rotate: '-10deg' }],
     shadowColor: '#000',
     shadowOpacity: 0.5,
     shadowRadius: 3,
