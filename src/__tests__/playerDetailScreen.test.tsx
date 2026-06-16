@@ -143,4 +143,12 @@ describe('Player detail screen', () => {
     const { getByText } = renderWithProviders(<PlayerDetail />);
     expect(getByText("Hasn't played yet")).toBeTruthy();
   });
+
+  it('shows a single error banner (no duplicate) in gw mode when the summary fails', () => {
+    mockParams = { id: '401', gw: '5' };
+    mockSummary = { isPending: false, isError: true, refetch: jest.fn(), data: undefined };
+    const { getAllByText, queryByText } = renderWithProviders(<PlayerDetail />);
+    expect(getAllByText('Retry')).toHaveLength(1);
+    expect(queryByText('9 pts')).toBeNull();
+  });
 });

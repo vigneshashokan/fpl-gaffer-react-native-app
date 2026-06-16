@@ -18,7 +18,9 @@ import { FixtureStrip } from '@/components/player/FixtureStrip';
 export default function PlayerDetailModal() {
   const router = useRouter();
   const { id, gw } = useLocalSearchParams<{ id: string; gw?: string }>();
-  const gwNum = gw != null ? Number(gw) : undefined;
+  const rawGw = Array.isArray(gw) ? gw[0] : gw;
+  const parsedGw = rawGw != null ? Number(rawGw) : NaN;
+  const gwNum = Number.isFinite(parsedGw) ? parsedGw : undefined;
   const { paletteKey, dark } = useThemeStore();
   const tk = apexTokens(dark, paletteKey);
 
@@ -74,15 +76,13 @@ export default function PlayerDetailModal() {
       <AvailabilityBanner status={player.status} news={player.news} chanceNext={player.chanceNext} tk={tk} />
 
       {gwNum != null ? (
-        summary.isError ? (
-          <SummaryError tk={tk} onRetry={() => summary.refetch()} />
-        ) : summary.data ? (
+        summary.data ? (
           <GwBreakdownCard
             breakdown={gwBreakdown(summary.data.history, gwNum, player.pos)}
             codeByTeamId={codeByTeamId ?? {}}
             tk={tk}
           />
-        ) : (
+        ) : summary.isError ? null : (
           <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
             <Skeleton height={120} radius={16} />
           </View>

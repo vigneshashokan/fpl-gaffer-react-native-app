@@ -25,8 +25,8 @@ export function GwBreakdownCard({ breakdown, codeByTeamId, tk }: GwBreakdownCard
   }
   return (
     <View style={styles.wrap}>
-      {breakdown.fixtures.map((fx, i) => (
-        <FixtureBlock key={i} round={breakdown.round} fx={fx} codeByTeamId={codeByTeamId} tk={tk} />
+      {breakdown.fixtures.map((fx) => (
+        <FixtureBlock key={`${fx.opponentTeamId}-${fx.isHome ? 'H' : 'A'}`} round={breakdown.round} fx={fx} codeByTeamId={codeByTeamId} tk={tk} />
       ))}
     </View>
   );
@@ -53,8 +53,8 @@ function FixtureBlock({
         <Text style={[styles.gwPts, { color: tk.text }]}>{fx.points} pts</Text>
       </View>
       {fx.played ? (
-        fx.lines.map((line, i) => (
-          <View key={i} style={[styles.line, { borderTopColor: tk.line }]}>
+        fx.lines.map((line) => (
+          <View key={line.label} style={[styles.line, { borderTopColor: tk.line }]}>
             <Text style={[styles.lineLabel, { color: tk.text }]}>{line.label}</Text>
             <Text style={[styles.linePts, { color: line.points >= 0 ? tk.green : tk.pink }]}>
               {fmt(line.points)}
