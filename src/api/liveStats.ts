@@ -75,11 +75,12 @@ export function deriveSubState(
   return {};
 }
 
-// Reds last so they paint on top of an earlier yellow.
+// At most one of each per match (a second yellow is recorded as a red); red
+// last so it paints on top of an earlier yellow.
 export function cardsFor(stat: Pick<LivePlayerStat, 'yellow' | 'red'>): Array<'yellow' | 'red'> {
   const cards: Array<'yellow' | 'red'> = [];
-  for (let i = 0; i < stat.yellow; i++) cards.push('yellow');
-  for (let i = 0; i < stat.red; i++) cards.push('red');
+  if (stat.yellow) cards.push('yellow');
+  if (stat.red) cards.push('red');
   return cards;
 }
 
