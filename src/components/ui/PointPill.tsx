@@ -19,17 +19,14 @@ export function PointPill({
 }: PointPillProps) {
   const played = pts != null;
   const hasBonus = !upcoming && played && (bonus ?? 0) >= 1;
-  const numBg = hasBonus ? '#FFC400' : played ? '#7B09E5' : 'rgba(255,255,255,0.22)';
+  const numBg = played ? '#7B09E5' : 'rgba(255,255,255,0.22)';
   return (
     <View style={[styles.container, { maxWidth }]}>
       {!upcoming && (
-        <View
-          style={[styles.num, { backgroundColor: numBg }, hasBonus && styles.numBonus]}
-          testID={hasBonus ? 'bonus-star' : undefined}
-        >
-          <Text style={[styles.numText, hasBonus && styles.numTextBonus]}>
-            {played ? String(pts) : '–'}
-          </Text>
+        <View style={[styles.num, { backgroundColor: numBg }]}>
+          {/* Gold ring + glow flags bonus while leaving the number readable. */}
+          {hasBonus && <View style={styles.bonusRing} pointerEvents="none" testID="bonus-star" />}
+          <Text style={styles.numText}>{played ? String(pts) : '–'}</Text>
         </View>
       )}
       <Text
@@ -67,13 +64,23 @@ const styles = StyleSheet.create({
   // reads as a golden halo around the points without obscuring the number.
   // Bonus: a solid gold disc with a dark number and a soft gold glow so it pops
   // off the dark pill (same disc shape as a normal score, just golden).
-  // Bonus: gold disc with a deeper amber border for a crisp coin/medal edge
-  // (no glow), so it stands out against the dark pill.
-  numBonus: {
-    borderWidth: 1.5,
-    borderColor: '#B8860B',
+  // Bonus: gold ring (inner edge hugs the 14×14 disc) plus a soft gold glow, so
+  // it reads as a golden halo around the points without obscuring the number.
+  bonusRing: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#FFC400',
+    shadowColor: '#FFC400',
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
-  numTextBonus: { color: '#3a2a00' },
   numText: {
     fontFamily: 'JetBrainsMono_700Bold',
     fontSize: 12,
