@@ -7,9 +7,6 @@ interface PointPillProps {
   name: string;
   upcoming?: boolean;
   maxWidth?: number;
-  /** Captain / vice are mutually exclusive; captain wins if both are set. */
-  capt?: boolean;
-  vice?: boolean;
   /** FPL bonus 0–3; >= 1 swaps the points disc for a gold star. */
   bonus?: number;
 }
@@ -19,8 +16,6 @@ export function PointPill({
   name,
   upcoming = false,
   maxWidth = 96,
-  capt,
-  vice,
   bonus,
 }: PointPillProps) {
   const played = pts != null;
@@ -28,16 +23,6 @@ export function PointPill({
   const numBg = hasBonus ? 'transparent' : played ? '#7B09E5' : 'rgba(255,255,255,0.22)';
   return (
     <View style={[styles.container, { maxWidth }]}>
-      {!upcoming && capt && (
-        <View style={[styles.chip, styles.chipC]}>
-          <Text style={styles.chipCText}>C</Text>
-        </View>
-      )}
-      {!upcoming && vice && !capt && (
-        <View style={[styles.chip, styles.chipV]}>
-          <Text style={styles.chipVText}>V</Text>
-        </View>
-      )}
       {!upcoming && (
         <View style={[styles.num, { backgroundColor: numBg }]}>
           {hasBonus && (
@@ -77,20 +62,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
   },
-  chip: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  // Inverse of the points disc (purple fill / white number): a white disc with
-  // a purple letter, so the captain/vice badge reads as distinct from the score.
-  chipC: { backgroundColor: '#FFFFFF' },
-  chipV: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#C4B5FD' },
-  chipCText: { fontFamily: 'Archivo_800ExtraBold', fontSize: 10, color: '#7B09E5' },
-  chipVText: { fontFamily: 'Archivo_800ExtraBold', fontSize: 10, color: '#7B09E5' },
   num: {
     width: 18,
     height: 18,

@@ -15,6 +15,7 @@ import {
   GoalsBadge,
   AssistsBadge,
   CardIcons,
+  CaptViceBadge,
 } from '@/components/ui/PitchBadges';
 import type { PitchPlayer } from '@/types/fpl';
 
@@ -122,15 +123,16 @@ function ApexPitchPlayerCard({
         {!upcoming && p.sub != null && <SubPill min={p.sub} />}
         {!upcoming && p.subIn != null && <SubInPill min={p.subIn} />}
       </View>
-      <PointPill
-        pts={upcoming ? undefined : p.pts}
-        name={p.name}
-        upcoming={upcoming}
-        maxWidth={pillMaxW}
-        capt={p.capt}
-        vice={p.vice}
-        bonus={p.bonus}
-      />
+      <View style={styles.pillRow}>
+        <CaptViceBadge capt={p.capt} vice={p.vice} />
+        <PointPill
+          pts={upcoming ? undefined : p.pts}
+          name={p.name}
+          upcoming={upcoming}
+          maxWidth={p.capt || p.vice ? pillMaxW - 22 : pillMaxW}
+          bonus={p.bonus}
+        />
+      </View>
     </>
   );
 
@@ -177,5 +179,10 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     position: 'relative',
+  },
+  pillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });

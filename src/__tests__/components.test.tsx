@@ -68,7 +68,7 @@ import { SettingsRow } from '@/components/settings/SettingsRow';
 import { FollowUsRow } from '@/components/settings/FollowUsRow';
 import { ApplyCheckbox } from '@/components/ui/ApplyCheckbox';
 import { ApplyAllCard } from '@/components/team/ApplyAllCard';
-import { SubPill, SubInPill, GoalsBadge, AssistsBadge, CardIcons } from '@/components/ui/PitchBadges';
+import { SubPill, SubInPill, GoalsBadge, AssistsBadge, CardIcons, CaptViceBadge } from '@/components/ui/PitchBadges';
 import { apexTokens } from '@/constants/apexTokens';
 import { PitchMarks } from '@/components/pitch/PitchMarks';
 import { ApexPitchMarks } from '@/components/pitch/ApexPitchMarks';
@@ -606,6 +606,12 @@ describe('PitchBadges', () => {
   });
   it('renders nothing for a zero count', () => {
     expect(render(<GoalsBadge count={0} />).toJSON()).toBeNull();
+  });
+  it('renders a captain badge, a vice badge, and nothing for a regular player', () => {
+    expect(render(<CaptViceBadge capt />).getByText('C')).toBeTruthy();
+    expect(render(<CaptViceBadge vice />).getByText('V')).toBeTruthy();
+    expect(render(<CaptViceBadge capt vice />).getByText('C')).toBeTruthy();
+    expect(render(<CaptViceBadge />).toJSON()).toBeNull();
   });
 });
 

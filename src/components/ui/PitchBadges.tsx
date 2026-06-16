@@ -20,6 +20,19 @@ export function SubInPill({ min }: { min: number }) {
   );
 }
 
+// Standalone captain / vice disc that sits just left of the points pill (not
+// inside it). White fill + purple letter — the inverse of the points disc — so
+// it reads as distinct from the score; vice is outlined to stay secondary.
+// Captain wins if both are set; renders nothing for a regular player.
+export function CaptViceBadge({ capt, vice }: { capt?: boolean; vice?: boolean }) {
+  if (!capt && !vice) return null;
+  return (
+    <View style={[styles.cvBadge, !capt && styles.cvBadgeVice]}>
+      <Text style={styles.cvText}>{capt ? 'C' : 'V'}</Text>
+    </View>
+  );
+}
+
 const STACK_CAP = 4;
 
 export function GoalsBadge({ count }: { count: number }) {
@@ -106,6 +119,22 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
+  cvBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  cvBadgeVice: { borderWidth: 1, borderColor: '#C4B5FD' },
+  cvText: { fontFamily: 'Archivo_800ExtraBold', fontSize: 10, color: '#7B09E5' },
   statStack: {
     position: 'absolute',
     bottom: -3,
