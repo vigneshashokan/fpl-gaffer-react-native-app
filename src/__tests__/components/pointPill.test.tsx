@@ -27,4 +27,10 @@ describe('PointPill', () => {
   it('renders the vice chip', () => {
     expect(render(<PointPill pts={6} name="Saka" vice />).getByText('V')).toBeTruthy();
   });
+
+  it('shows only the captain chip when both capt and vice are set', () => {
+    const r = render(<PointPill pts={20} name="Salah" capt vice />);
+    expect(r.getByText('C')).toBeTruthy();
+    expect(r.queryByText('V')).toBeNull();
+  });
 });

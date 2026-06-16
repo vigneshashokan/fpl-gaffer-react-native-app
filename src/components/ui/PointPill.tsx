@@ -7,8 +7,10 @@ interface PointPillProps {
   name: string;
   upcoming?: boolean;
   maxWidth?: number;
+  /** Captain / vice are mutually exclusive; captain wins if both are set. */
   capt?: boolean;
   vice?: boolean;
+  /** FPL bonus 0–3; >= 1 swaps the points disc for a gold star. */
   bonus?: number;
 }
 
@@ -31,7 +33,7 @@ export function PointPill({
           <Text style={styles.chipCText}>C</Text>
         </View>
       )}
-      {!upcoming && vice && (
+      {!upcoming && vice && !capt && (
         <View style={[styles.chip, styles.chipV]}>
           <Text style={styles.chipVText}>V</Text>
         </View>
@@ -46,6 +48,8 @@ export function PointPill({
               />
             </Svg>
           )}
+          {/* Rendered after the star so the number paints on top (RN stacks
+              later siblings above earlier ones). */}
           <Text style={[styles.numText, hasBonus && styles.numTextBonus]}>
             {played ? String(pts) : '–'}
           </Text>
@@ -93,17 +97,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
+  // Star is slightly larger than the 18×18 disc, so it bleeds a few px past
+  // the edge by design (overflow is visible in RN by default).
   star: {
     position: 'absolute',
     top: -5,
     left: -5,
-    zIndex: 0,
   },
   numText: {
     fontFamily: 'JetBrainsMono_700Bold',
     fontSize: 10.5,
     color: '#fff',
-    zIndex: 1,
   },
   numTextBonus: { color: '#3a2a00' },
   name: {
