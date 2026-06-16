@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { BallIcon, BootIcon } from './statIcons';
 
 const CARD_COLORS = { yellow: '#FFCD00', red: '#FF3B3B' };
@@ -85,9 +85,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -10,
     left: -14,
-    height: 18,
+    height: 16,
     borderRadius: 999,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 4,
@@ -101,7 +101,10 @@ const styles = StyleSheet.create({
     fontFamily: 'JetBrainsMono_700Bold',
     fontSize: 11,
     color: '#fff',
-    lineHeight: 13,
+    // No explicit lineHeight + trimmed font padding so the glyphs sit centered
+    // in the pill instead of riding high (a fixed lineHeight left a gap below).
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   statStack: {
     position: 'absolute',
