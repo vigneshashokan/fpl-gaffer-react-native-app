@@ -5,7 +5,8 @@ import { useThemeStore } from '@/store/themeStore';
 import { apexTokens } from '@/constants/apexTokens';
 import { usePlayers } from '@/api/players';
 import { useClubs, useClubCodeByTeamId } from '@/api/clubs';
-import { useElementSummary, last5FromHistory, next5Fixtures } from '@/api/playerSummary';
+import { useElementSummary, last5FromHistory, next5Fixtures, gwBreakdown } from '@/api/playerSummary';
+import { GwBreakdownCard } from '@/components/player/GwBreakdownCard';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Icon } from '@/components/ui/Icon';
 import { PlayerHero } from '@/components/player/PlayerHero';
@@ -16,7 +17,10 @@ import { FixtureStrip } from '@/components/player/FixtureStrip';
 
 export default function PlayerDetailModal() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, gw } = useLocalSearchParams<{ id: string; gw?: string }>();
+  const rawGw = Array.isArray(gw) ? gw[0] : gw;
+  const parsedGw = rawGw != null ? Number(rawGw) : NaN;
+  const gwNum = Number.isFinite(parsedGw) ? parsedGw : undefined;
   const { paletteKey, dark } = useThemeStore();
   const tk = apexTokens(dark, paletteKey);
 
@@ -71,7 +75,21 @@ export default function PlayerDetailModal() {
 
       <AvailabilityBanner status={player.status} news={player.news} chanceNext={player.chanceNext} tk={tk} />
 
-      <KeyStatsRow form={player.f} total={player.tp} ep={player.gw} ict={player.ict} bps={player.bps} tk={tk} />
+      {gwNum != null ? (
+        summary.data ? (
+          <GwBreakdownCard
+            breakdown={gwBreakdown(summary.data.history, gwNum, player.pos)}
+            codeByTeamId={codeByTeamId ?? {}}
+            tk={tk}
+          />
+        ) : summary.isError ? null : (
+          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+            <Skeleton height={120} radius={16} />
+          </View>
+        )
+      ) : (
+        <KeyStatsRow form={player.f} total={player.tp} ep={player.gw} ict={player.ict} bps={player.bps} tk={tk} />
+      )}
 
       {summary.isError ? (
         <SummaryError tk={tk} onRetry={() => summary.refetch()} />

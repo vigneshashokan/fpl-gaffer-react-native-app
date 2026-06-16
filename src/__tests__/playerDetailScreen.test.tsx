@@ -3,7 +3,7 @@ import { fireEvent } from '@testing-library/react-native';
 import { renderWithProviders } from './utils/renderWithProviders';
 
 const mockBack = jest.fn();
-let mockParams: { id?: string } = { id: '401' };
+let mockParams: { id?: string; gw?: string } = { id: '401' };
 
 jest.mock('expo-router', () => ({
   __esModule: true,
@@ -104,5 +104,72 @@ describe('Player detail screen', () => {
     expect(getByText('Next 5 fixtures')).toBeTruthy();
     expect(queryByText('Retry')).toBeNull();
     expect(queryByText('ARS')).toBeNull();
+  });
+
+  it('replaces season tiles with the gameweek breakdown when a gw param is present', () => {
+    mockParams = { id: '401', gw: '5' };
+    mockSummary = {
+      isPending: false,
+      isError: false,
+      refetch: jest.fn(),
+      data: {
+        history: [{
+          round: 5, total_points: 9, minutes: 90, goals_scored: 1, assists: 0,
+          clean_sheets: 0, goals_conceded: 1, own_goals: 0, penalties_saved: 0,
+          penalties_missed: 0, yellow_cards: 0, red_cards: 0, saves: 0, bonus: 3,
+          was_home: true, opponent_team: 1, team_h_score: 2, team_a_score: 1,
+        }],
+        fixtures: [{ event: 7, is_home: true, team_h: 13, team_a: 1, difficulty: 2 }],
+      },
+    };
+    const { getByText, queryByText } = renderWithProviders(<PlayerDetail />);
+    // FWD: Played 90' +2, Goal +4, Bonus +3 → 9, no Other line.
+    expect(getByText('Goal')).toBeTruthy();
+    expect(getByText('+4')).toBeTruthy();
+    expect(getByText('Bonus')).toBeTruthy();
+    expect(getByText('9 pts')).toBeTruthy();
+    // Season tile row is gone.
+    expect(queryByText('ICT')).toBeNull();
+  });
+
+  it('keeps season tiles when there is no gw param', () => {
+    // default mockParams = { id: '401' }
+    const { getByText } = renderWithProviders(<PlayerDetail />);
+    expect(getByText('ICT')).toBeTruthy();
+  });
+
+  it("shows 'Hasn't played yet' for an upcoming gameweek with no history row", () => {
+    mockParams = { id: '401', gw: '8' }; // freshSummary history only has rounds 4 & 5
+    const { getByText } = renderWithProviders(<PlayerDetail />);
+    expect(getByText("Hasn't played yet")).toBeTruthy();
+  });
+
+  it('renders the scoreline player-team-first for an away gameweek', () => {
+    mockParams = { id: '401', gw: '5' };
+    mockSummary = {
+      isPending: false,
+      isError: false,
+      refetch: jest.fn(),
+      data: {
+        history: [{
+          round: 5, total_points: 2, minutes: 90, goals_scored: 0, assists: 0,
+          clean_sheets: 0, goals_conceded: 2, own_goals: 0, penalties_saved: 0,
+          penalties_missed: 0, yellow_cards: 0, red_cards: 0, saves: 0, bonus: 0,
+          was_home: false, opponent_team: 1, team_h_score: 2, team_a_score: 1,
+        }],
+        fixtures: [{ event: 7, is_home: false, team_h: 1, team_a: 13, difficulty: 3 }],
+      },
+    };
+    const { getByText } = renderWithProviders(<PlayerDetail />);
+    // Player's team is away (1–2 from their perspective), opponent ARS at home.
+    expect(getByText(/ARS \(A\) 1–2/)).toBeTruthy();
+  });
+
+  it('shows a single error banner (no duplicate) in gw mode when the summary fails', () => {
+    mockParams = { id: '401', gw: '5' };
+    mockSummary = { isPending: false, isError: true, refetch: jest.fn(), data: undefined };
+    const { getAllByText, queryByText } = renderWithProviders(<PlayerDetail />);
+    expect(getAllByText('Retry')).toHaveLength(1);
+    expect(queryByText('9 pts')).toBeNull();
   });
 });

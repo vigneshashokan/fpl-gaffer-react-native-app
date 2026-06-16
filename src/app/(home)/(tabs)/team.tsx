@@ -138,8 +138,8 @@ export default function TeamTab() {
     setPendingSuggestions({});
   };
 
-  const openPlayer = (p: PitchPlayer) =>
-    router.push({ pathname: '/(home)/player/[id]', params: { id: p.id } });
+  const openPlayer = (p: PitchPlayer, gw: number) =>
+    router.push({ pathname: '/(home)/player/[id]', params: { id: p.id, gw: String(gw) } });
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -185,7 +185,7 @@ export default function TeamTab() {
               onToggleAllSuggestions={toggleAllSuggestions}
               onUndo={undo}
               onConfirm={confirm}
-              onOpenPlayer={openPlayer}
+              onOpenPlayer={(p) => openPlayer(p, item)}
               onVerticalScroll={(y) => handlePageScroll(item, y)}
             />
           )}

@@ -379,6 +379,25 @@ describe('ApexDugout', () => {
     expect(getByText('Dugout')).toBeTruthy();
     expect(getByText('Henderson')).toBeTruthy();
   });
+
+  it('calls onPlayerPress with the tapped bench player', () => {
+    const onPlayerPress = jest.fn();
+    const players = [
+      { id: '116', name: 'Henderson', pts: 0, gk: true },
+      { id: '245', name: 'Truffert',  pts: 1 },
+    ];
+    const { getByText } = render(
+      <ApexDugout
+        players={players}
+        card="#fff"
+        cardBorder="#E7E9F2"
+        faint="#8B8694"
+        onPlayerPress={onPlayerPress}
+      />
+    );
+    fireEvent.press(getByText('Truffert'));
+    expect(onPlayerPress).toHaveBeenCalledWith(players[1]);
+  });
 });
 
 // ── CaptainPickCard ───────────────────────────────────────────
