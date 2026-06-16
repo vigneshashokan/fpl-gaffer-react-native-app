@@ -37,9 +37,9 @@ const SIDE_CHROME = 32 + 12;
 // screen instead of overflowing it.
 const SLOT_MIN = 48;
 const SLOT_MAX = 90;
-// Upper bound for a name pill on a sparse row (e.g. 2 forwards) so a long
-// name can show in full without the pill growing unboundedly.
-const PILL_MAX = 120;
+// Upper bound for a name pill. Pills size to their content (the name) up to
+// this cap, so a longer name gets a wider pill; only an extreme name truncates.
+const PILL_MAX = 150;
 const AVATAR_RATIO = 0.51;
 const WRAPPER_RATIO = 0.6;
 
@@ -69,9 +69,9 @@ export function ApexPitch({
       <ApexPitchMarks width={pitch.w} height={pitch.h} />
       <View style={styles.rows}>
         {rows.map((row, i) => {
-          // Pills size to the room available in THIS row: a 2-player row gets
-          // wide pills (full names), a 5-player row gets tighter ones.
-          const pillMaxW = Math.min(PILL_MAX, (screenW - SIDE_CHROME) / Math.max(1, row.length) - 6);
+          // Pills grow to fit the player's name (up to PILL_MAX) instead of
+          // being squeezed to the per-slot width, so long names show in full.
+          const pillMaxW = PILL_MAX;
           return (
             <View key={i} style={styles.row}>
               {row.map((p) => (
@@ -129,7 +129,7 @@ function ApexPitchPlayerCard({
           pts={upcoming ? undefined : p.pts}
           name={p.name}
           upcoming={upcoming}
-          maxWidth={p.capt || p.vice ? pillMaxW - 22 : pillMaxW}
+          maxWidth={pillMaxW}
           bonus={p.bonus}
         />
       </View>

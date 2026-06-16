@@ -43,8 +43,6 @@ export function PointPill({
       <Text
         style={[styles.name, { color: played || upcoming ? '#fff' : '#C4CAD6' }]}
         numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.6}
       >
         {name}
       </Text>
