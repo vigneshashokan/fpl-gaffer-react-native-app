@@ -9,12 +9,13 @@ import {
 import { ApexPitchMarks } from './ApexPitchMarks';
 import { AvatarDisc } from '@/components/ui/AvatarDisc';
 import { PointPill } from '@/components/ui/PointPill';
-import { CaptBadge, ViceBadge } from '@/components/ui/CaptBadge';
 import {
   SubPill,
   SubInPill,
-  BallBadge,
+  GoalsBadge,
+  AssistsBadge,
   CardIcons,
+  CaptViceBadge,
 } from '@/components/ui/PitchBadges';
 import type { PitchPlayer } from '@/types/fpl';
 
@@ -36,9 +37,9 @@ const SIDE_CHROME = 32 + 12;
 // screen instead of overflowing it.
 const SLOT_MIN = 48;
 const SLOT_MAX = 90;
-// Upper bound for a name pill on a sparse row (e.g. 2 forwards) so a long
-// name can show in full without the pill growing unboundedly.
-const PILL_MAX = 120;
+// Upper bound for a name pill. Pills size to their content (the name) up to
+// this cap, so a longer name gets a wider pill; only an extreme name truncates.
+const PILL_MAX = 150;
 const AVATAR_RATIO = 0.51;
 const WRAPPER_RATIO = 0.6;
 
@@ -68,9 +69,9 @@ export function ApexPitch({
       <ApexPitchMarks width={pitch.w} height={pitch.h} />
       <View style={styles.rows}>
         {rows.map((row, i) => {
-          // Pills size to the room available in THIS row: a 2-player row gets
-          // wide pills (full names), a 5-player row gets tighter ones.
-          const pillMaxW = Math.min(PILL_MAX, (screenW - SIDE_CHROME) / Math.max(1, row.length) - 6);
+          // Pills grow to fit the player's name (up to PILL_MAX) instead of
+          // being squeezed to the per-slot width, so long names show in full.
+          const pillMaxW = PILL_MAX;
           return (
             <View key={i} style={styles.row}>
               {row.map((p) => (
@@ -116,30 +117,36 @@ function ApexPitchPlayerCard({
     <>
       <View style={[styles.avatarWrapper, { width: wrapperSize, height: wrapperSize }]}>
         <AvatarDisc size={avatarSize} player={p} />
-        {p.capt && <CaptBadge />}
-        {p.vice && <ViceBadge />}
         {!upcoming && p.cards && p.cards.length > 0 && <CardIcons cards={p.cards} />}
-        {!upcoming && p.ball && <BallBadge />}
+        {!upcoming && p.goals != null && p.goals > 0 && <GoalsBadge count={p.goals} />}
+        {!upcoming && p.assists != null && p.assists > 0 && <AssistsBadge count={p.assists} />}
         {!upcoming && p.sub != null && <SubPill min={p.sub} />}
         {!upcoming && p.subIn != null && <SubInPill min={p.subIn} />}
       </View>
-      <PointPill
-        pts={upcoming ? undefined : p.pts}
-        name={p.name}
-        upcoming={upcoming}
-        maxWidth={pillMaxW}
-      />
+      <View style={styles.pillRow}>
+        <CaptViceBadge capt={p.capt} vice={p.vice} />
+        <PointPill
+          pts={upcoming ? undefined : p.pts}
+          name={p.name}
+          upcoming={upcoming}
+          maxWidth={pillMaxW}
+          bonus={p.bonus}
+        />
+      </View>
     </>
   );
 
+  // minWidth (not a fixed width) keeps short cards on the slot grid while
+  // letting a long name grow the card — and the pill inside it — so the name
+  // stays enclosed instead of bleeding out of a slot-width pill.
   if (!onPress) {
-    return <View style={[styles.playerContainer, { width: slotW }]}>{body}</View>;
+    return <View style={[styles.playerContainer, { minWidth: slotW }]}>{body}</View>;
   }
   return (
     <Pressable
       style={({ pressed }) => [
         styles.playerContainer,
-        { width: slotW },
+        { minWidth: slotW },
         pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] },
       ]}
       onPress={() => onPress(p)}
@@ -175,5 +182,10 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     position: 'relative',
+  },
+  pillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });
