@@ -93,7 +93,7 @@ function parseArgs(args: string[]): BackfillOpts {
 if (import.meta.main) {
   const opts = parseArgs(Deno.args);
   const deps: BackfillDeps = {
-    supabase: createAdminClient(),
+    supabase: opts.dryRun ? (undefined as unknown as SupabaseClient) : createAdminClient(),
     fetch: globalThis.fetch,
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
     log: (m) => console.log(`[backfill] ${m}`),
