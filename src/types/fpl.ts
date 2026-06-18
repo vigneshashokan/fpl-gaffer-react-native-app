@@ -49,6 +49,7 @@ export interface TopPickPlayer {
   tp: number;
   own: number;
   gw: number;
+  xp?: number;
 }
 
 export interface Chip {

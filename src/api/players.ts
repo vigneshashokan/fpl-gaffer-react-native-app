@@ -1,14 +1,17 @@
 // src/api/players.ts
 //
 // usePlayers() returns all players in UI shape, joining against the clubs
-// table for the ClubCode. useTopPicks() derives a per-position top-8 by
-// ep_next from the same cache entry — no extra fetch.
+// table for the ClubCode. useTopPicks() ranks by the model's projection p50
+// (falling back to ep_next when absent) and fetches the current GW +
+// projections.
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { queryKeys } from './queryKeys';
 import type { Player, Position, TopPickPlayer, ClubCode, PlayerStatus } from '@/types/fpl';
+import { useCurrentGameweek } from './fixtures';
+import { useProjections, type ProjectionStat } from './projections';
 
 interface PlayerRow {
   id: number;
@@ -86,23 +89,33 @@ export function usePlayers() {
 
 const TOP_N_PER_POS = 8;
 
+export function rankTopPicks(
+  players: Player[],
+  projections: Map<string, ProjectionStat>,
+): Record<Position, TopPickPlayer[]> {
+  const buckets: Record<Position, TopPickPlayer[]> = { GKP: [], DEF: [], MID: [], FWD: [] };
+  for (const p of players) {
+    const xp = projections.get(p.id)?.p50;
+    buckets[p.pos].push({
+      id: p.id, name: p.name, club: p.club, p: p.p, f: p.f, tp: p.tp, own: p.own, gw: p.gw, xp,
+    });
+  }
+  for (const pos of Object.keys(buckets) as Position[]) {
+    buckets[pos].sort((a, b) => (b.xp ?? b.gw) - (a.xp ?? a.gw));
+    buckets[pos] = buckets[pos].slice(0, TOP_N_PER_POS);
+  }
+  return buckets;
+}
+
 export function useTopPicks() {
   const players = usePlayers();
+  const gw = useCurrentGameweek();
+  const projections = useProjections(gw.data?.gw ?? 0);
 
   const data = useMemo<Record<Position, TopPickPlayer[]> | undefined>(() => {
     if (!players.data) return undefined;
-    const buckets: Record<Position, TopPickPlayer[]> = { GKP: [], DEF: [], MID: [], FWD: [] };
-    for (const p of players.data) {
-      buckets[p.pos].push({
-        id: p.id, name: p.name, club: p.club, p: p.p, f: p.f, tp: p.tp, own: p.own, gw: p.gw,
-      });
-    }
-    for (const pos of Object.keys(buckets) as Position[]) {
-      buckets[pos].sort((a, b) => b.gw - a.gw);
-      buckets[pos] = buckets[pos].slice(0, TOP_N_PER_POS);
-    }
-    return buckets;
-  }, [players.data]);
+    return rankTopPicks(players.data, projections.data ?? new Map());
+  }, [players.data, projections.data]);
 
   return { ...players, data };
 }
