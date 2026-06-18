@@ -33,11 +33,11 @@ Supabase (local stack + edge functions in `supabase/`):
 ```bash
 supabase start                          # local Postgres/Auth/Functions in Docker
 supabase db push                        # apply migrations to linked project
-supabase functions deploy fpl-ingest    # or: ping
+supabase functions deploy fpl-ingest    # or: ping, fpl-project
 ./supabase/scripts/test-ingest-locally.sh
 ```
 
-CI (`.github/workflows/deploy-supabase.yml`) runs `db push` + deploys both functions on merge to `main`, path-filtered to `supabase/**`, so UI-only PRs don't spend CI minutes.
+CI (`.github/workflows/deploy-supabase.yml`) runs `db push` + deploys the edge functions on merge to `main`, path-filtered to `supabase/**` (so UI-only PRs don't spend CI minutes). **It deploys functions by name** (`ping`, `fpl-ingest`, `fpl-project`) — when you add a new function, add a `supabase functions deploy <name>` line there too, or anything that calls it (e.g. a `pg_cron` job) will 404 in prod.
 
 ## Architecture (the parts that span files)
 
@@ -62,8 +62,42 @@ CI (`.github/workflows/deploy-supabase.yml`) runs `db push` + deploys both funct
 
 - **Path aliases** — `@/*` → `src/*`, `@/assets/*` → `assets/*` (in `tsconfig.json`, mirrored in the Jest `moduleNameMapper`).
 
+## xPts model (issue #30) — decisions, pipeline & roadmap
+
+The app's expected-points number is now a **real owned model**, not the old `xPtsOf` form-plus-price-hash stub (deleted). Shipped as **v1 across PRs #100 (data foundation), #101 (offline model + backtest), #102 (serving + client wiring)**. Design spec + plans live in the **workspace (outer) repo**: `../docs/superpowers/specs/2026-06-16-xpts-model-v1-design.md` and `../docs/superpowers/plans/2026-06-1{6,7}-xpts-*.md`; the results/decision doc is `docs/xpts-model.md`.
+
+- **Decision: build, not buy.** Reselling a paid feed (FPLReview/FFH) has no moat; re-displaying FPL's free `ep_next` isn't a product. An **owned model is the intended USP**. v1 is a deliberately lean proof-of-concept — *not* the elaborate model.
+
+- **The model** — per-position (GKP/DEF/MID/FWD) **linear quantile regression** at q 0.25/0.50/0.75, target = a player-fixture's `total_points`. Lean v1 features: exp-decay form (window 6, α 0.85) of xG/xA/xGI/threat/creativity/influence/bps/defensive_contribution/total_points; `xmin` (recent starts share); home/away-aware opponent strength (÷1000); `was_home`; price (÷10). **Deferred to v2:** penalty/set-piece order + ownership (only in the *current* bootstrap → anachronistic for a last-season backtest) and explicit FDR (subsumed by opponent strength). Coefficients are a **dot product** → portable and near-zero train/serve skew.
+
+- **Validation** — walk-forward over 2025/26 (GW8→38; train on `gw<t`; eval among `xmin≥0.5`). v1 **passed its gate**: MAE **2.063 vs 2.444** for the exp-decay-form baseline (−15.6%), cumulative captaincy **185 vs 174**, interval coverage **0.489** (≈0.50). **Honest caveat:** that baseline is a *reconstruction* of `ep_next` (last season's live `ep_next` is unrecoverable from the API), so "beats ep_next" really means "beats a form-only baseline"; the **true head-to-head is the prospective comparison** to live `ep_next` from next season.
+
+- **Pipeline (spans toolchains):**
+  - `model/` — **Python offline toolchain** (venv + `pytest`; excluded from repo tsc/jest like `supabase/functions`). `train.py` fits 12 models → **`model/artifacts/xpts-v1.json`**, the committed coefficient artifact = *the model the app ships*. `backtest.py` → `docs/xpts-model.md`. `emit_parity_fixture.py` → the golden parity fixture. (`supabase/scripts/backfill-history.ts` did the one-time 2025/26 backfill — Deno, not Python.)
+  - `supabase/functions/fpl-project/` — **Deno `pg_cron` serving** (nightly 04:00 UTC, after the bootstrap/fixtures ingest jobs). Reads `players`/`clubs`/`fixtures`/recent `player_gw_history`, **rebuilds the same features in TS** (`feature-spec.ts` mirrors `model/feature_spec.py`; `lib/features.ts` ports `features.py`), applies the artifact (`lib/scorer.ts`), upserts `projections` for the next 3 GWs (DGW summed; blank → no row).
+  - **Tables** — `player_gw_history` (per-player-fixture training/backtest set; season-scoped, **no FK to `players`** since FPL element ids reset each season; PK `(season, player_id, fixture_id)`) and **`projections`** = the **frozen serving contract** the client reads (PK `(player_id, gw)`, `p25/p50/p75`, `model_version`; upsert `onConflict: 'player_id,gw'`).
+  - **Client** — `useProjections(gw)` → `useTopPicks` ranks by `p50` (falls back to `ep_next`) → `PickRow` shows `p50` (one decimal).
+
+- **Gotchas / invariants:**
+  - **`fpl-project/feature-spec.ts` MUST stay byte-identical to `model/feature_spec.py`** (constants + `FEATURE_COLUMNS` order). The **golden-fixture parity test** (`fpl-project/__tests__/scorer.test.ts` — asserts Deno feature-build + scoring == Python to 1e-6) is the skew guard; keep it green.
+  - **The artifact is committed twice:** `model/artifacts/xpts-v1.json` *and* a copy in `supabase/functions/fpl-project/artifacts/` (Deno bundles its own dir). **Retraining = re-run `train.py` + `emit_parity_fixture.py`, then re-copy both `xpts-v1.json` and `parity-fixture.json` into the function dir.**
+  - **Off-season-safe / graceful:** absent projection → client falls back to `ep_next`, so an empty `projections` table behaves exactly like before. Projections only become meaningful once the new season generates fixtures + history.
+  - **`projections` stores p-values RAW** — out-of-distribution inputs can yield negative/extreme values; flooring/calibration is a v2 lever (naive per-quantile flooring would break `p25≤p50≤p75`).
+  - **xGI collinearity:** `expected_goal_involvements ≈ expected_goals + expected_assists`, so those three form features are near-dependent → large compensating coefficients. Harmless for *prediction* (terms cancel; backtest passed), but a documented v2 lever (drop xGI / regularize).
+  - **A→C migration path:** `projections` is the contract; to move serving to a Python batch job in v2, point it at the same inputs/table and flip the schedule — the client never changes. Trigger: the model outgrows a portable dot product (e.g. GBM).
+
+- **Monetization strategy (decided):** **don't paywall model accuracy** — users can't feel it, it erodes free-tier trust, and it's 2× maintenance. Instead: **the best model + the projection number are free** (acquisition/trust), and the **paywall is the decision layer** (captaincy / best-XI + bench-order / transfer planner) plus depth (multi-GW, p25/p75 risk bands). Launch decision features free → **instrument usage** (leaning PostHog — also gives feature-flags for the wall + A/B) → find the "aha" feature from data → *then* place the paywall. The v2 model *deepens* premium; it is not the wall.
+
+- **Roadmap / fast-follows:**
+  - **Ongoing per-GW capture** into `player_gw_history` (keeps serving fresh through the season; right endpoint is `event/{gw}/live/`, one call — not 841 `element-summary` calls). Deliberately deferred from v1.
+  - **Plan 4 — the decision layer** (the monetization surface): start with a **best-XI + bench-order + captain optimizer** over the user's 15 (directly addresses the founder's own "wrong bench / wrong captain" pain), then transfer suggestions.
+  - **v2 model:** external xG (Understat/FBref), the elaborate factor set, fix the xGI collinearity / regularize, a real minutes-rotation classifier, GBM/ensemble, possibly Approach C (Python serving).
+  - Serving-side p-value flooring/calibration; analytics instrumentation for data-driven paywall placement.
+
 ## Docs worth reading before non-trivial work
 
 - `docs/architecture.md` — stack rationale, env/Vault setup, deploy flow
 - `docs/schema.md` — DB schema · `docs/fpl-api.md` — upstream FPL API notes
 - `docs/auth-*.md` — per-provider auth flows (email/password, Google, biometric, account deletion)
+- `docs/xpts-model.md` — xPts v1 results, model, backtest metrics, A→C trigger
+- `../docs/superpowers/specs/2026-06-16-xpts-model-v1-design.md` — xPts v1 design (in the workspace repo); plans alongside it under `../docs/superpowers/plans/`
