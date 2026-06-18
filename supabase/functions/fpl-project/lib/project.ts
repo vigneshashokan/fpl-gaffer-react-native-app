@@ -36,7 +36,7 @@ export function buildProjections(params: {
 }): ProjectionRow[] {
   const out: ProjectionRow[] = [];
   for (const player of params.players) {
-    if (!params.artifact.coefficients[player.position]) continue; // unknown position -> skip
+    if (!(player.position in params.artifact.coefficients)) continue; // unknown position -> skip
     const prior = params.historyByPlayer[player.id] ?? [];
     for (const gw of params.gws) {
       const fixtures = (params.fixturesByGw[gw] ?? []).filter(

@@ -35,6 +35,7 @@ Deno.test('opponentStrengths is home/away-aware and scaled', () => {
   assertAlmostEquals(home.att, 1000 / 1000, 1e-9);
   const away = opponentStrengths(false, 5, STR);  // player away -> opp home
   assertAlmostEquals(away.def, 1200 / 1000, 1e-9);
+  assertAlmostEquals(away.att, 1100 / 1000, 1e-9); // away branch -> opp strength_attack_home
   assertEquals(opponentStrengths(true, 999, STR).def, 0); // unknown opp -> 0
 });
 

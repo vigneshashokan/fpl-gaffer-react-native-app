@@ -1,3 +1,6 @@
+// NOTE: projection p-values are upserted RAW (not floored); out-of-distribution
+// inputs can occasionally yield negative or extreme values. Flooring/calibration
+// is a documented v2 lever (tied to the xGI-collinearity finding).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from './lib/supabase-admin.ts';
@@ -61,7 +64,12 @@ export async function handler(req: Request, depsOverride?: Deps): Promise<Respon
       if (r.error) throw r.error;
     }
 
-    const players = (playersRes.data ?? []) as PlayerInput[];
+    const players: PlayerInput[] = (playersRes.data ?? []).map((p: Record<string, unknown>) => ({
+      id: num(p.id),
+      position: String(p.position ?? ''),
+      team_id: num(p.team_id),
+      now_cost: num(p.now_cost),
+    }));
     const clubStrengths: Record<number, ClubStrength> = {};
     for (const c of (clubsRes.data ?? []) as Record<string, number>[]) {
       clubStrengths[c.id] = {
@@ -77,7 +85,7 @@ export async function handler(req: Request, depsOverride?: Deps): Promise<Respon
     }
     const historyByPlayer: Record<number, HistoryRow[]> = {};
     for (const h of (historyRes.data ?? []) as Record<string, unknown>[]) {
-      const pid = Number(h.player_id);
+      const pid = num(h.player_id);
       (historyByPlayer[pid] ??= []).push({
         gw: num(h.gw), fixture_id: num(h.fixture_id), starts: num(h.starts),
         expected_goals: num(h.expected_goals), expected_assists: num(h.expected_assists),

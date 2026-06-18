@@ -15,7 +15,7 @@ export interface ProjectionStat {
   p75: number;
 }
 
-interface ProjectionRow {
+export interface ProjectionRow {
   player_id: number;
   p25: number;
   p50: number;

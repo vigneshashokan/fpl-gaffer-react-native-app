@@ -1,8 +1,9 @@
 // src/api/players.ts
 //
 // usePlayers() returns all players in UI shape, joining against the clubs
-// table for the ClubCode. useTopPicks() derives a per-position top-8 by
-// ep_next from the same cache entry — no extra fetch.
+// table for the ClubCode. useTopPicks() ranks by the model's projection p50
+// (falling back to ep_next when absent) and fetches the current GW +
+// projections.
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
