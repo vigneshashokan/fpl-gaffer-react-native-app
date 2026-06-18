@@ -23,28 +23,63 @@ CLUB_STRENGTHS = {
 }
 
 
-def _prior(pid: int):
-    # two prior GWs with non-trivial, distinct stats
-    return pd.DataFrame([
-        {"gw": 1, "fixture_id": pid * 10, "starts": 1, "minutes": 90, "total_points": 3,
-         "expected_goals": 0.2, "expected_assists": 0.1, "expected_goal_involvements": 0.3,
-         "threat": 20.0, "creativity": 10.0, "influence": 15.0, "bps": 18,
-         "defensive_contribution": 2, "value": 70},
-        {"gw": 2, "fixture_id": pid * 10 + 1, "starts": 1, "minutes": 80, "total_points": 9,
-         "expected_goals": 0.6, "expected_assists": 0.3, "expected_goal_involvements": 0.9,
-         "threat": 55.0, "creativity": 33.0, "influence": 44.0, "bps": 30,
-         "defensive_contribution": 4, "value": 71},
-    ])
+def _prior(pos: str):
+    # Position-specific prior rows with realistic stats for each position
+    position_priors = {
+        "GKP": [
+            {"gw": 1, "fixture_id": 10, "starts": 1, "minutes": 90, "total_points": 2,
+             "expected_goals": 0.0, "expected_assists": 0.0, "expected_goal_involvements": 0.0,
+             "threat": 0.0, "creativity": 0.0, "influence": 12.0, "bps": 15,
+             "defensive_contribution": 0, "value": 45},
+            {"gw": 2, "fixture_id": 20, "starts": 1, "minutes": 90, "total_points": 6,
+             "expected_goals": 0.0, "expected_assists": 0.0, "expected_goal_involvements": 0.0,
+             "threat": 0.0, "creativity": 2.0, "influence": 28.0, "bps": 25,
+             "defensive_contribution": 0, "value": 45},
+        ],
+        "DEF": [
+            {"gw": 1, "fixture_id": 10, "starts": 1, "minutes": 90, "total_points": 2,
+             "expected_goals": 0.02, "expected_assists": 0.05, "expected_goal_involvements": 0.07,
+             "threat": 8.0, "creativity": 12.0, "influence": 18.0, "bps": 18,
+             "defensive_contribution": 8, "value": 50},
+            {"gw": 2, "fixture_id": 20, "starts": 1, "minutes": 90, "total_points": 7,
+             "expected_goals": 0.05, "expected_assists": 0.10, "expected_goal_involvements": 0.15,
+             "threat": 12.0, "creativity": 20.0, "influence": 30.0, "bps": 28,
+             "defensive_contribution": 10, "value": 50},
+        ],
+        "MID": [
+            {"gw": 1, "fixture_id": 10, "starts": 1, "minutes": 90, "total_points": 3,
+             "expected_goals": 0.15, "expected_assists": 0.12, "expected_goal_involvements": 0.27,
+             "threat": 25.0, "creativity": 30.0, "influence": 22.0, "bps": 18,
+             "defensive_contribution": 3, "value": 75},
+            {"gw": 2, "fixture_id": 20, "starts": 1, "minutes": 90, "total_points": 9,
+             "expected_goals": 0.45, "expected_assists": 0.25, "expected_goal_involvements": 0.70,
+             "threat": 55.0, "creativity": 48.0, "influence": 40.0, "bps": 30,
+             "defensive_contribution": 4, "value": 76},
+        ],
+        "FWD": [
+            {"gw": 1, "fixture_id": 10, "starts": 1, "minutes": 90, "total_points": 2,
+             "expected_goals": 0.30, "expected_assists": 0.08, "expected_goal_involvements": 0.38,
+             "threat": 40.0, "creativity": 15.0, "influence": 20.0, "bps": 15,
+             "defensive_contribution": 1, "value": 85},
+            {"gw": 2, "fixture_id": 20, "starts": 1, "minutes": 90, "total_points": 8,
+             "expected_goals": 0.65, "expected_assists": 0.15, "expected_goal_involvements": 0.80,
+             "threat": 70.0, "creativity": 25.0, "influence": 38.0, "bps": 28,
+             "defensive_contribution": 1, "value": 86},
+        ],
+    }
+    return pd.DataFrame(position_priors[pos])
 
 
 def main() -> None:
-    artifact = json.load(open(_ART))
+    with open(_ART) as f:
+        artifact = json.load(f)
     cases = []
+    position_values = {"GKP": 45, "DEF": 50, "MID": 76, "FWD": 86}
     for i, pos in enumerate(POSITIONS):
         if pos not in artifact["coefficients"]:
             continue
-        prior = _prior(i + 1)
-        target = pd.Series({"was_home": bool(i % 2), "opponent_team": 5, "value": 72})
+        prior = _prior(pos)
+        target = pd.Series({"was_home": bool(i % 2), "opponent_team": 5, "value": position_values[pos]})
         feat = build_feature_row(prior, target, CLUB_STRENGTHS)
         cases.append({
             "position": pos,
