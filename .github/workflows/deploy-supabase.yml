@@ -37,3 +37,4 @@ jobs:
         run: |
           supabase functions deploy ping        --no-verify-jwt
           supabase functions deploy fpl-ingest  --no-verify-jwt
+          supabase functions deploy fpl-project --no-verify-jwt
