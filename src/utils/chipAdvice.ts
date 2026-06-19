@@ -80,3 +80,80 @@ export function freeHitTip(
   }
   return { title: 'Hold', lines: ['No blank gameweek scheduled'] };
 }
+
+const WC_FDR_THRESHOLD = 5; // more than this many players on a hard fixture → wildcard
+const HARD_FDR = 4;
+
+export function wildcardTip(
+  owned: Player[],
+  seasonFixtures: SeasonFixtures,
+  upcomingGw: number,
+): ChipTip {
+  for (const gw of gwRange(seasonFixtures, upcomingGw)) {
+    const tough = owned.filter((p) =>
+      clubFdrs(seasonFixtures, p.club, gw).some((f) => f >= HARD_FDR),
+    ).length;
+    if (tough > WC_FDR_THRESHOLD) {
+      return {
+        title: headline(gw, upcomingGw),
+        lines: [`${tough} of your players face hard fixtures in GW${gw}`],
+      };
+    }
+  }
+  return { title: 'Hold', lines: ['Your fixtures look balanced'] };
+}
+
+// Summed p50 over the projection window (near-term asset strength). 0 when absent.
+function sumWindowP50(p: Player, projMaps: Map<string, ProjectionStat>[]): number {
+  let s = 0;
+  for (const m of projMaps) s += m.get(p.id)?.p50 ?? 0;
+  return s;
+}
+
+export function tripleCaptainTip(
+  owned: Player[],
+  seasonFixtures: SeasonFixtures,
+  upcomingGw: number,
+  projMaps: Map<string, ProjectionStat>[],
+): ChipTip {
+  // Best near-term asset = highest summed p50 over the window.
+  let bestAsset: Player | null = null;
+  let bestScore = 0;
+  for (const p of owned) {
+    const s = sumWindowP50(p, projMaps);
+    if (s > bestScore) {
+      bestScore = s;
+      bestAsset = p;
+    }
+  }
+  if (!bestAsset) return { title: 'Hold', lines: ['No standout fixture yet'] };
+
+  // Prefer that asset's next double.
+  for (const gw of gwRange(seasonFixtures, upcomingGw)) {
+    if (clubFixtureCount(seasonFixtures, bestAsset.club, gw) === 2) {
+      return { title: headline(gw, upcomingGw), lines: [`${bestAsset.name} plays twice in GW${gw}`] };
+    }
+  }
+
+  // No double → near-term GW with the highest single-player p50.
+  let pickGw: number | null = null;
+  let pickPlayer: Player | null = null;
+  let pickP50 = 0;
+  for (let off = 0; off < projMaps.length; off++) {
+    for (const p of owned) {
+      const v = projMaps[off].get(p.id)?.p50 ?? 0;
+      if (v > pickP50) {
+        pickP50 = v;
+        pickPlayer = p;
+        pickGw = upcomingGw + off;
+      }
+    }
+  }
+  if (pickPlayer && pickGw != null) {
+    return {
+      title: headline(pickGw, upcomingGw),
+      lines: [`${pickPlayer.name} ~${round1(pickP50 * 3)} pts (×3) in GW${pickGw}`],
+    };
+  }
+  return { title: 'Hold', lines: ['No standout fixture yet'] };
+}

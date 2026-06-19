@@ -1,4 +1,4 @@
-import { benchBoostTip, freeHitTip } from '@/utils/chipAdvice';
+import { benchBoostTip, freeHitTip, wildcardTip, tripleCaptainTip } from '@/utils/chipAdvice';
 import type { Player } from '@/types/fpl';
 import type { SeasonFixtures } from '@/api/fixtures';
 import type { ProjectionStat } from '@/api/projections';
@@ -67,5 +67,58 @@ describe('freeHitTip', () => {
   it('returns the graceful copy when every GW fields a full squad', () => {
     const tip = freeHitTip(owned11, sf({ 10: allPlay, 11: allPlay }), 10);
     expect(tip).toEqual({ title: 'Hold', lines: ['No blank gameweek scheduled'] });
+  });
+});
+
+describe('wildcardTip', () => {
+  it('flags the first GW where more than 5 players face FDR >= 4', () => {
+    const six = (fdr: number) => ({
+      ARS: { count: 1, fdrs: [fdr] }, LIV: { count: 1, fdrs: [fdr] }, MCI: { count: 1, fdrs: [fdr] },
+      NEW: { count: 1, fdrs: [fdr] }, TOT: { count: 1, fdrs: [fdr] }, CHE: { count: 1, fdrs: [fdr] },
+    });
+    const owned = [pl('a', 'ARS'), pl('b', 'LIV'), pl('c', 'MCI'), pl('d', 'NEW'), pl('e', 'TOT'), pl('f', 'CHE')];
+    const fixtures = sf({ 10: six(2), 11: six(5) }); // GW11: all 6 face FDR 5 (>5 players)
+    const tip = wildcardTip(owned, fixtures, 10);
+    expect(tip.title).toBe('Hold for GW11');
+    expect(tip.lines[0]).toContain('6 of your players face hard fixtures in GW11');
+  });
+
+  it('returns the balanced copy when no tough run exists', () => {
+    const owned = [pl('a', 'ARS'), pl('b', 'LIV')];
+    const easy = { ARS: { count: 1, fdrs: [2] }, LIV: { count: 1, fdrs: [2] } };
+    expect(wildcardTip(owned, sf({ 10: easy, 11: easy }), 10)).toEqual({
+      title: 'Hold', lines: ['Your fixtures look balanced'],
+    });
+  });
+});
+
+describe('tripleCaptainTip', () => {
+  it('holds for the best near-term asset\'s next double', () => {
+    const owned = [pl('star', 'MCI', { name: 'Star' }), pl('x', 'ARS')];
+    const fixtures = sf({
+      10: { MCI: { count: 1, fdrs: [3] }, ARS: { count: 1, fdrs: [3] } },
+      13: { MCI: { count: 2, fdrs: [2, 3] }, ARS: { count: 1, fdrs: [3] } }, // Star (MCI) doubles
+    });
+    const projMaps = [pmap({ star: 8, x: 3 }), pmap({ star: 8, x: 3 }), pmap({ star: 8, x: 3 })];
+    const tip = tripleCaptainTip(owned, fixtures, 10, projMaps);
+    expect(tip.title).toBe('Hold for GW13');
+    expect(tip.lines[0]).toContain('Star plays twice in GW13');
+  });
+
+  it('recommends the near-term best single-player x3 when no double exists', () => {
+    const owned = [pl('star', 'MCI', { name: 'Star' }), pl('x', 'ARS')];
+    const single = { MCI: { count: 1, fdrs: [3] }, ARS: { count: 1, fdrs: [3] } };
+    const projMaps = [pmap({ star: 9, x: 3 }), pmap({ star: 5, x: 3 }), pmap({ star: 5, x: 3 })];
+    const tip = tripleCaptainTip(owned, sf({ 10: single, 11: single, 12: single }), 10, projMaps);
+    expect(tip.title).toBe('Use this GW'); // best single p50 (Star 9) is in the upcoming GW
+    expect(tip.lines[0]).toContain('Star ~27 pts (×3) in GW10'); // 9 × 3
+  });
+
+  it('returns the graceful copy when there are no projections (cold start)', () => {
+    const owned = [pl('star', 'MCI', { name: 'Star' })];
+    const single = { MCI: { count: 1, fdrs: [3] } };
+    expect(tripleCaptainTip(owned, sf({ 10: single }), 10, [pmap({}), pmap({}), pmap({})])).toEqual({
+      title: 'Hold', lines: ['No standout fixture yet'],
+    });
   });
 });
