@@ -117,3 +117,101 @@ export function selectMissingGws(events: HistoryEvent[], presentGws: number[]): 
     .map((e) => e.id)
     .sort((a, b) => a - b);
 }
+
+// event/{gw}/live element. xG / ict / influence / creativity / threat arrive as
+// strings (like element-summary); the rest as numbers. `num()` coerces both.
+export interface LiveElementStats {
+  minutes: number;
+  starts: number;
+  goals_scored: number;
+  assists: number;
+  clean_sheets: number;
+  goals_conceded: number;
+  bonus: number;
+  bps: number;
+  total_points: number;
+  expected_goals: string;
+  expected_assists: string;
+  expected_goal_involvements: string;
+  expected_goals_conceded: string;
+  influence: string;
+  creativity: string;
+  threat: string;
+  ict_index: string;
+  defensive_contribution: number;
+}
+
+export interface LiveElement {
+  id: number;
+  stats: LiveElementStats;
+}
+
+export interface LiveEventResponse {
+  elements: LiveElement[];
+}
+
+export interface ElementMeta {
+  position: Position;
+  team_id: number;
+  now_cost: number;
+}
+
+export interface GwFixture {
+  fixture_id: number;
+  team_h: number;
+  team_a: number;
+}
+
+// Build per-player history rows for one GW from the live endpoint, joining the
+// fixtures table (opponent / was_home) and bootstrap meta (position / team /
+// price). Every element whose club played gets a row (incl. 0-minute rows).
+// Blank GW → no row. DGW → one row on the first fixture by id (aggregate stats).
+export function liveToHistoryRows(
+  season: string,
+  gw: number,
+  liveByElement: Map<number, LiveElementStats>,
+  elementMeta: Map<number, ElementMeta>,
+  gwFixtures: GwFixture[],
+): PlayerGwHistoryRow[] {
+  const rows: PlayerGwHistoryRow[] = [];
+  for (const [playerId, meta] of elementMeta) {
+    const clubFixtures = gwFixtures
+      .filter((f) => f.team_h === meta.team_id || f.team_a === meta.team_id)
+      .sort((a, b) => a.fixture_id - b.fixture_id);
+    if (clubFixtures.length === 0) continue; // blank GW
+    const fx = clubFixtures[0]; // DGW → first fixture
+    const s = liveByElement.get(playerId);
+    if (!s) continue; // element absent from live (defensive)
+    const wasHome = fx.team_h === meta.team_id;
+    rows.push({
+      season,
+      player_id: playerId,
+      fixture_id: fx.fixture_id,
+      gw,
+      position: meta.position,
+      team_id: meta.team_id,
+      opponent_team: wasHome ? fx.team_a : fx.team_h,
+      was_home: wasHome,
+      minutes: s.minutes,
+      starts: s.starts,
+      goals_scored: s.goals_scored,
+      assists: s.assists,
+      clean_sheets: s.clean_sheets,
+      goals_conceded: s.goals_conceded,
+      bonus: s.bonus,
+      bps: s.bps,
+      total_points: s.total_points,
+      expected_goals: num(s.expected_goals),
+      expected_assists: num(s.expected_assists),
+      expected_goal_involvements: num(s.expected_goal_involvements),
+      expected_goals_conceded: num(s.expected_goals_conceded),
+      ict_index: num(s.ict_index),
+      influence: num(s.influence),
+      creativity: num(s.creativity),
+      threat: num(s.threat),
+      defensive_contribution: s.defensive_contribution,
+      value: meta.now_cost,
+    });
+  }
+  return rows;
+}
