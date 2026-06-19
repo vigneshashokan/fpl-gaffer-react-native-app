@@ -103,6 +103,18 @@ Deno.test('liveToHistoryRows: a 0-minute player whose club played still gets a r
   assertEquals(rows[0].minutes, 0);
 });
 
+Deno.test('liveToHistoryRows: an away-side player gets was_home=false and opponent=team_h', () => {
+  const meta = new Map<number, ElementMeta>([[400, { position: 'FWD', team_id: 9, now_cost: 70 }]]);
+  const fixtures: GwFixture[] = [{ fixture_id: 10, team_h: 12, team_a: 9 }];
+  const live = new Map<number, LiveElementStats>([[400, stats({ defensive_contribution: 5 })]]);
+  const rows = liveToHistoryRows('2026/27', 2, live, meta, fixtures);
+  assertEquals(rows.length, 1);
+  assertEquals(rows[0].was_home, false);
+  assertEquals(rows[0].opponent_team, 12); // team_h (player is on the away side, team_a=9)
+  assertEquals(rows[0].fixture_id, 10);
+  assertEquals(rows[0].defensive_contribution, 5);
+});
+
 function elt(id: number, team: number, element_type: number): BootstrapElement {
   return {
     id, web_name: `P${id}`, first_name: 'F', second_name: 'L', team, element_type,

@@ -237,7 +237,8 @@ export function liveToHistoryRows(
 // data_checked and not yet in player_gw_history, fetch the live endpoint, join
 // fixtures + bootstrap meta, and upsert. Idempotent.
 export async function ingestHistory(runId: string, deps: IngestHistoryDeps): Promise<void> {
-  const season = currentSeasonLabel(deps.now());
+  const now = deps.now();
+  const season = currentSeasonLabel(now);
 
   const boot = await fetchJson<BootstrapForHistory>(
     'https://fantasy.premierleague.com/api/bootstrap-static/',
@@ -266,7 +267,7 @@ export async function ingestHistory(runId: string, deps: IngestHistoryDeps): Pro
     elementMeta.set(e.id, { position, team_id: e.team, now_cost: e.now_cost });
   }
 
-  const nowIso = deps.now().toISOString();
+  const nowIso = now.toISOString();
   let totalUpserted = 0;
 
   for (const gw of targetGws) {
