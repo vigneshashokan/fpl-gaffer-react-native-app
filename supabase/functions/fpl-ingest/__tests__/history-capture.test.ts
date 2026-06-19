@@ -6,7 +6,10 @@ import {
   type GwFixture,
   type HistoryEvent,
   type LiveElementStats,
+  ingestHistory,
+  type IngestHistoryDeps,
 } from '../sources/history.ts';
+import type { BootstrapElement } from '../sources/bootstrap.ts';
 
 const EVENTS: HistoryEvent[] = [
   { id: 1, finished: true, data_checked: true },
@@ -98,4 +101,124 @@ Deno.test('liveToHistoryRows: a 0-minute player whose club played still gets a r
   const rows = liveToHistoryRows('2026/27', 2, live, new Map([[100, META.get(100)!]]), GW_FIXTURES);
   assertEquals(rows.length, 1);
   assertEquals(rows[0].minutes, 0);
+});
+
+function elt(id: number, team: number, element_type: number): BootstrapElement {
+  return {
+    id, web_name: `P${id}`, first_name: 'F', second_name: 'L', team, element_type,
+    now_cost: 50, form: '0.0', total_points: 0, status: 'a', news: '', news_added: null,
+    chance_of_playing_next_round: 100, ep_next: '0.0', ep_this: '0.0',
+    selected_by_percent: '0.0', ict_index: '0.0', bps: 0, transfers_in_event: 0,
+  };
+}
+
+function makeHistoryDeps(opts: {
+  events: HistoryEvent[];
+  elements: BootstrapElement[];
+  presentGws: number[];
+  liveByGw: Record<number, unknown>;
+  fixturesByGw: Record<number, Array<{ id: number; team_h: number; team_a: number }>>;
+  now?: Date;
+}): { deps: IngestHistoryDeps; upserts: Array<{ table: string; rows: unknown[] }>; runUpdates: Array<Record<string, unknown>> } {
+  const upserts: Array<{ table: string; rows: unknown[] }> = [];
+  const runUpdates: Array<Record<string, unknown>> = [];
+
+  // deno-lint-ignore no-explicit-any
+  const supabase: any = {
+    from(table: string) {
+      return {
+        select(_cols: string) {
+          return {
+            eq(_col: string, val: unknown) {
+              if (table === 'player_gw_history') {
+                return Promise.resolve({ data: opts.presentGws.map((gw) => ({ gw })), error: null });
+              }
+              if (table === 'fixtures') {
+                return Promise.resolve({ data: opts.fixturesByGw[val as number] ?? [], error: null });
+              }
+              return Promise.resolve({ data: [], error: null });
+            },
+          };
+        },
+        upsert(rows: unknown[], _opts?: unknown) {
+          upserts.push({ table, rows });
+          return Promise.resolve({ data: null, error: null });
+        },
+        update(payload: Record<string, unknown>) {
+          return {
+            eq(_col: string, _val: string) {
+              runUpdates.push(payload);
+              return Promise.resolve({ data: null, error: null });
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const fetchStub: typeof fetch = (input: string | URL | Request) => {
+    const url = String(input);
+    if (url.includes('bootstrap-static')) {
+      return Promise.resolve(new Response(JSON.stringify({ events: opts.events, elements: opts.elements }), { status: 200 }));
+    }
+    const m = url.match(/event\/(\d+)\/live/);
+    if (m) {
+      return Promise.resolve(new Response(JSON.stringify(opts.liveByGw[Number(m[1])] ?? { elements: [] }), { status: 200 }));
+    }
+    return Promise.resolve(new Response('{}', { status: 200 }));
+  };
+
+  return {
+    deps: { supabase, fetch: fetchStub, now: () => opts.now ?? new Date('2026-09-15T03:30:00Z') },
+    upserts,
+    runUpdates,
+  };
+}
+
+Deno.test('ingestHistory: captures a missing settled GW and closes the run success', async () => {
+  const { deps, upserts, runUpdates } = makeHistoryDeps({
+    events: [{ id: 1, finished: true, data_checked: true }],
+    elements: [elt(100, 12, 3)], // MID on team 12
+    presentGws: [],
+    fixturesByGw: { 1: [{ id: 10, team_h: 12, team_a: 9 }] },
+    liveByGw: {
+      1: { elements: [{ id: 100, stats: {
+        minutes: 90, starts: 1, goals_scored: 1, assists: 0, clean_sheets: 0,
+        goals_conceded: 1, bonus: 1, bps: 25, total_points: 7,
+        expected_goals: '0.50', expected_assists: '0.10', expected_goal_involvements: '0.60',
+        expected_goals_conceded: '1.20', influence: '30.0', creativity: '10.0', threat: '20.0',
+        ict_index: '6.0', defensive_contribution: 1,
+      } }] },
+    },
+  });
+
+  await ingestHistory('run-1', deps);
+
+  const histUpsert = upserts.find((u) => u.table === 'player_gw_history');
+  assertEquals(histUpsert !== undefined, true);
+  assertEquals((histUpsert!.rows as unknown[]).length, 1);
+  const row = (histUpsert!.rows as Array<Record<string, unknown>>)[0];
+  assertEquals(row.player_id, 100);
+  assertEquals(row.gw, 1);
+  assertEquals(row.fixture_id, 10);
+  assertEquals(row.season, '2026/27');
+  assertEquals(row.expected_goals, 0.5);
+  assertEquals(runUpdates.at(-1)?.status, 'success');
+  assertEquals(runUpdates.at(-1)?.rows_upserted, 1);
+});
+
+Deno.test('ingestHistory: skips (no upsert) when nothing settled is missing', async () => {
+  const { deps, upserts, runUpdates } = makeHistoryDeps({
+    events: [{ id: 1, finished: true, data_checked: true }],
+    elements: [elt(100, 12, 3)],
+    presentGws: [1], // already captured
+    fixturesByGw: {},
+    liveByGw: {},
+  });
+
+  await ingestHistory('run-1', deps);
+
+  assertEquals(upserts.some((u) => u.table === 'player_gw_history'), false);
+  assertEquals(runUpdates.at(-1)?.status, 'skipped');
+  assertEquals(runUpdates.at(-1)?.skip_reason, 'no new settled gameweeks');
 });

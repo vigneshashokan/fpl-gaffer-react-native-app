@@ -1,4 +1,8 @@
-import type { Position } from './bootstrap.ts';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { BootstrapElement, Position } from './bootstrap.ts';
+import { fetchJson } from '../lib/fpl-client.ts';
+import { finishRun, skipRun } from '../lib/ingestion-runs.ts';
+import { currentSeasonLabel } from '../lib/calendar.ts';
 
 export interface ElementSummaryHistoryRow {
   element: number;
@@ -162,6 +166,19 @@ export interface GwFixture {
   team_a: number;
 }
 
+export interface BootstrapForHistory {
+  events: HistoryEvent[];
+  elements: BootstrapElement[];
+}
+
+export interface IngestHistoryDeps {
+  supabase: SupabaseClient;
+  fetch: typeof globalThis.fetch;
+  now: () => Date;
+}
+
+const POSITION_BY_TYPE: Record<number, Position> = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+
 // Build per-player history rows for one GW from the live endpoint, joining the
 // fixtures table (opponent / was_home) and bootstrap meta (position / team /
 // price). Every element whose club played gets a row (incl. 0-minute rows).
@@ -214,4 +231,69 @@ export function liveToHistoryRows(
     });
   }
   return rows;
+}
+
+// Self-healing per-GW capture: for every current-season GW that is finished +
+// data_checked and not yet in player_gw_history, fetch the live endpoint, join
+// fixtures + bootstrap meta, and upsert. Idempotent.
+export async function ingestHistory(runId: string, deps: IngestHistoryDeps): Promise<void> {
+  const season = currentSeasonLabel(deps.now());
+
+  const boot = await fetchJson<BootstrapForHistory>(
+    'https://fantasy.premierleague.com/api/bootstrap-static/',
+    { fetch: deps.fetch },
+  );
+
+  const presentRes = await deps.supabase
+    .from('player_gw_history')
+    .select('gw')
+    .eq('season', season);
+  if (presentRes.error) throw presentRes.error;
+  const presentGws = [
+    ...new Set(((presentRes.data ?? []) as Array<{ gw: number }>).map((r) => r.gw)),
+  ];
+
+  const targetGws = selectMissingGws(boot.events, presentGws);
+  if (targetGws.length === 0) {
+    await skipRun(deps.supabase, runId, 'no new settled gameweeks');
+    return;
+  }
+
+  const elementMeta = new Map<number, ElementMeta>();
+  for (const e of boot.elements) {
+    const position = POSITION_BY_TYPE[e.element_type];
+    if (!position) continue;
+    elementMeta.set(e.id, { position, team_id: e.team, now_cost: e.now_cost });
+  }
+
+  const nowIso = deps.now().toISOString();
+  let totalUpserted = 0;
+
+  for (const gw of targetGws) {
+    const live = await fetchJson<LiveEventResponse>(
+      `https://fantasy.premierleague.com/api/event/${gw}/live/`,
+      { fetch: deps.fetch },
+    );
+    const liveByElement = new Map<number, LiveElementStats>();
+    for (const el of live.elements) liveByElement.set(el.id, el.stats);
+
+    const fxRes = await deps.supabase
+      .from('fixtures')
+      .select('id, team_h, team_a')
+      .eq('event', gw);
+    if (fxRes.error) throw fxRes.error;
+    const gwFixtures: GwFixture[] = ((fxRes.data ?? []) as Array<{ id: number; team_h: number; team_a: number }>)
+      .map((f) => ({ fixture_id: f.id, team_h: f.team_h, team_a: f.team_a }));
+
+    const rows = liveToHistoryRows(season, gw, liveByElement, elementMeta, gwFixtures);
+    if (rows.length === 0) continue;
+    const stamped = rows.map((r) => ({ ...r, updated_at: nowIso }));
+    const up = await deps.supabase
+      .from('player_gw_history')
+      .upsert(stamped, { onConflict: 'season,player_id,fixture_id' });
+    if (up.error) throw up.error;
+    totalUpserted += rows.length;
+  }
+
+  await finishRun(deps.supabase, runId, { rowsUpserted: totalUpserted });
 }
