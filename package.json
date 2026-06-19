@@ -1,5 +1,5 @@
 {
-  "name": "fantasy-gaffer-react-native-app",
+  "name": "fantasy-gaffer",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
