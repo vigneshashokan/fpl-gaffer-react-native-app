@@ -1,8 +1,8 @@
 import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
-  name: 'FPL Gaffer',
-  slug: 'fpl-gaffer-react-native-app',
+  name: 'Fantasy Gaffer',
+  slug: 'fantasy-gaffer-react-native-app',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/logos/logo-mark.png',

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > The `@AGENTS.md` import above is load-bearing: **read https://docs.expo.dev/versions/v56.0.0/ before writing any Expo code.** APIs in this SDK band changed meaningfully (`expo-router` v6, `expo-glass-effect`, `expo-symbols`, `@expo/ui` beta) — don't write from memory.
 
-FPL Gaffer is an Expo / React Native (SDK 54, RN 0.81, React 19) app backed by Supabase, wrapping the public Fantasy Premier League API.
+Fantasy Gaffer is an Expo / React Native (SDK 54, RN 0.81, React 19) app backed by Supabase, wrapping the public Fantasy Premier League API.
 
 ## Commands
 

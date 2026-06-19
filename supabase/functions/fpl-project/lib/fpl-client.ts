@@ -4,7 +4,7 @@ export interface FetchJsonOptions {
   retryDelayMs?: number;
 }
 
-const USER_AGENT = 'fpl-gaffer/1.0 (https://github.com/vigneshashokan/fpl-gaffer-react-native-app)';
+const USER_AGENT = 'fantasy-gaffer/1.0 (https://github.com/vigneshashokan/fantasy-gaffer-react-native-app)';
 
 export async function fetchJson<T>(
   url: string,
