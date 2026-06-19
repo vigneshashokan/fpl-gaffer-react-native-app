@@ -1,4 +1,4 @@
-import { availabilityFactor, adjusted, optimalLineup, captainPicksFrom, subSuggestions } from '@/utils/gafferAdvice';
+import { availabilityFactor, adjusted, optimalLineup, captainPicksFrom, subSuggestions, computeAdvice } from '@/utils/gafferAdvice';
 import type { Player, ClubCode } from '@/types/fpl';
 import type { SquadPlayer } from '@/api/squad';
 import type { ProjectionStat } from '@/api/projections';
@@ -216,5 +216,24 @@ describe('subSuggestions', () => {
     expect(sugg[0].detail).toBe('Doubtful 25%');
     expect(sugg[0].gain).toBe('+5.0 pts'); // 6 − (0.25 × 4 = 1) = 5
     expect(sugg[0].id).toBe('sub-out-in');
+  });
+});
+
+describe('computeAdvice', () => {
+  it('produces top-3 captain picks, sub suggestions, and the optimal starter ids', () => {
+    const { squad, proj } = squad15();
+    const advice = computeAdvice({ squad, proj });
+    expect(advice.captainPicks).toHaveLength(3);
+    expect(advice.captainPicks[0].name).toBe('Pf1'); // f1 p50 10 → highest doubled
+    expect(advice.captainPicks[0].xp).toBe(20);
+    expect(advice.optimalStarterIds).toHaveLength(11);
+    expect(Array.isArray(advice.suggestions)).toBe(true);
+  });
+
+  it('still produces picks from ep_next when projections are empty (off-season)', () => {
+    const { squad } = squad15();
+    const advice = computeAdvice({ squad, proj: new Map() });
+    expect(advice.captainPicks).toHaveLength(3);
+    expect(advice.optimalStarterIds).toHaveLength(11);
   });
 });

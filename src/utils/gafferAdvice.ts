@@ -190,3 +190,28 @@ export function subSuggestions(
     wasApplied: false,
   }));
 }
+
+export interface AdviceInput {
+  squad: { starters: SquadPlayer[]; bench: SquadPlayer[] };
+  proj: Map<string, ProjectionStat>;
+  fixturesByClub?: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>>;
+}
+
+export interface GafferAdvice {
+  captainPicks: CaptainPick[];
+  suggestions: Suggestion[];
+  optimalStarterIds: string[];
+}
+
+export function computeAdvice({ squad, proj, fixturesByClub }: AdviceInput): GafferAdvice {
+  const { starterIds } = optimalLineup(squad, proj);
+  const byId = new Map([...squad.starters, ...squad.bench].map((p) => [p.id, p]));
+  const optimalStarters = starterIds
+    .map((id) => byId.get(id))
+    .filter((p): p is SquadPlayer => p != null);
+  return {
+    captainPicks: captainPicksFrom(optimalStarters, proj, fixturesByClub),
+    suggestions: subSuggestions(squad, starterIds, proj),
+    optimalStarterIds: starterIds,
+  };
+}
