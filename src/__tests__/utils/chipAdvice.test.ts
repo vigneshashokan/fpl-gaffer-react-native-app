@@ -38,7 +38,7 @@ describe('benchBoostTip', () => {
     const tip = benchBoostTip(SQUAD, fixtures, 10, projMaps);
     expect(tip.title).toBe('Hold for GW12');
     expect(tip.lines[0]).toContain('2 of your players play twice in GW12');
-    expect(tip.lines.some((l) => l.includes('bench'))).toBe(true); // ~4 from bench
+    expect(tip.lines[1]).toBe('~4 projected from your bench');
   });
 
   it('returns the graceful copy when no double is scheduled', () => {
@@ -89,6 +89,15 @@ describe('wildcardTip', () => {
     expect(wildcardTip(owned, sf({ 10: easy, 11: easy }), 10)).toEqual({
       title: 'Hold', lines: ['Your fixtures look balanced'],
     });
+  });
+
+  it('does not fire at exactly 5 players on a hard fixture (strict > threshold)', () => {
+    const five = (fdr: number) => ({
+      ARS: { count: 1, fdrs: [fdr] }, LIV: { count: 1, fdrs: [fdr] }, MCI: { count: 1, fdrs: [fdr] },
+      NEW: { count: 1, fdrs: [fdr] }, TOT: { count: 1, fdrs: [fdr] },
+    });
+    const owned = [pl('a', 'ARS'), pl('b', 'LIV'), pl('c', 'MCI'), pl('d', 'NEW'), pl('e', 'TOT')];
+    expect(wildcardTip(owned, sf({ 10: five(5) }), 10)).toEqual({ title: 'Hold', lines: ['Your fixtures look balanced'] });
   });
 });
 

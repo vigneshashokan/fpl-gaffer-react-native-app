@@ -10,6 +10,7 @@ import {
   useEventLive,
   useEventStats,
   useFixturesByGw,
+  useAllFixtures,
 } from '@/api/fixtures';
 import { makeTestQueryClient } from '../utils/renderWithProviders';
 
@@ -75,6 +76,7 @@ describe('seasonFixturesFromRows', () => {
     expect(sf.get(1)?.LIV?.count).toBe(1);
     expect(sf.get(1)?.LIV?.fdrs).toEqual([4]);
     expect(sf.get(1)?.MCI?.count).toBe(1);
+    expect(sf.get(1)?.MCI?.fdrs).toEqual([3]);
   });
 
   it('skips fixtures with a null event', () => {
@@ -230,5 +232,41 @@ describe('useFixturesByGw', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.ARS?.opp).toBe('LIV');
     expect(selectChain.eq).toHaveBeenCalledWith('event', 24);
+  });
+});
+
+describe('useAllFixtures', () => {
+  it('returns a SeasonFixtures map with correct per-GW per-club count/fdrs', async () => {
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      if (table === 'fixtures') return { select: jest.fn().mockResolvedValue({
+        data: [
+          { event: 1, team_h: 1, team_a: 2, team_h_difficulty: 2, team_a_difficulty: 4 },
+          { event: 1, team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 5 }, // ARS plays twice
+          { event: 2, team_h: 2, team_a: 3, team_h_difficulty: 3, team_a_difficulty: 2 },
+        ],
+        error: null,
+      }) };
+      if (table === 'clubs') return { select: jest.fn().mockResolvedValue({
+        data: [{ id: 1, short_name: 'ARS' }, { id: 2, short_name: 'LIV' }, { id: 3, short_name: 'MCI' }],
+        error: null,
+      }) };
+      return { select: jest.fn() };
+    });
+
+    const client = makeTestQueryClient();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useAllFixtures(), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // GW1: ARS plays twice (home in fx1, away in fx2)
+    expect(result.current.data?.get(1)?.ARS?.count).toBe(2);
+    expect(result.current.data?.get(1)?.ARS?.fdrs).toEqual([2, 5]);
+    // GW1: LIV plays once (away in fx1)
+    expect(result.current.data?.get(1)?.LIV?.count).toBe(1);
+    // GW2: LIV plays once (home)
+    expect(result.current.data?.get(2)?.LIV?.count).toBe(1);
+    expect(result.current.data?.get(2)?.MCI?.count).toBe(1);
   });
 });
