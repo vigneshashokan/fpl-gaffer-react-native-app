@@ -168,7 +168,8 @@ describe('subSuggestions', () => {
     const s = sugg[0];
     expect(s.type).toBe('sub');
     expect(s.text).toMatch(/^Bench /);
-    expect(s.gain).toMatch(/^\+\d/); // e.g. "+4.0 pts"
+    expect(s.gain).toMatch(/^\+\d+(\.\d)? pts$/);
+
     expect(s.wasApplied).toBe(false);
   });
 
@@ -189,7 +190,8 @@ describe('subSuggestions', () => {
     const { starterIds } = optimalLineup(squad, proj);
     const sugg = subSuggestions(squad, starterIds, proj);
     const injured = sugg.find((s) => s.text.includes('Pf1'));
-    expect(injured?.detail).toBe('Injured');
+    expect(injured).toBeDefined();
+    expect(injured!.detail).toBe('Injured');
   });
 
   it('is empty when the current lineup already matches the optimal XI', () => {
@@ -201,5 +203,18 @@ describe('subSuggestions', () => {
       bench: [...squad.starters, ...squad.bench].filter((p) => !starterIds.includes(p.id)),
     };
     expect(subSuggestions(optimalSquad, starterIds, proj)).toEqual([]);
+  });
+
+  it('reports a doubtful chance-of-playing reason with an exact gain', () => {
+    const outP = sp('out', 'MID', { status: 'd', chanceNext: 25 });
+    const inP = sp('in', 'MID');
+    const squad = { starters: [outP], bench: [inP] };
+    const proj = projMap({ out: 4, in: 6 });
+    const sugg = subSuggestions(squad, ['in'], proj); // optimal XI wants 'in'
+    expect(sugg).toHaveLength(1);
+    expect(sugg[0].text).toBe('Bench Pout for Pin');
+    expect(sugg[0].detail).toBe('Doubtful 25%');
+    expect(sugg[0].gain).toBe('+5.0 pts'); // 6 − (0.25 × 4 = 1) = 5
+    expect(sugg[0].id).toBe('sub-out-in');
   });
 });
