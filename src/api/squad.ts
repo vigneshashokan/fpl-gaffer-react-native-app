@@ -24,6 +24,8 @@ import { chipsFromHistory, gwPointsFromHistory, useManager, useManagerHistory } 
 import { usePlayers } from './players';
 import { useProfile } from './profile';
 import { queryKeys } from './queryKeys';
+import { useProjections, type ProjectionStat } from './projections';
+import { computeAdvice } from '@/utils/gafferAdvice';
 
 interface PicksResponse {
   picks: Array<{
@@ -95,6 +97,7 @@ export function useApexTeam(targetGw?: number) {
   const historyQ = useManagerHistory();
   const fixturesQ = useFixturesByGw(gw);
   const liveQ = useEventLive(gw);
+  const projQ = useProjections(liveGw);
 
   const isPending =
     profile.isPending ||
@@ -136,6 +139,7 @@ export function useApexTeam(targetGw?: number) {
       historyQ.data,
       fixturesQ.data,
       liveQ.data,
+      projQ.data,
     );
   }, [
     noTeam,
@@ -146,6 +150,7 @@ export function useApexTeam(targetGw?: number) {
     historyQ.data,
     fixturesQ.data,
     liveQ.data,
+    projQ.data,
   ]);
 
   return { data, isPending, isError, error, noTeam };
@@ -183,8 +188,9 @@ function buildApexTeam(
   eventStats: { gw: number; avgPoints: number; highestPoints: number; finished: boolean; dataChecked: boolean },
   liveCurrent: { gw: number; finished: boolean; dataChecked: boolean },
   history: { current?: Array<{ event: number; points: number; total_points: number; rank: number }>; chips: Array<{ name: string; event: number }> },
-  _fixturesByClub: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>> | undefined,
+  fixturesByClub: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>> | undefined,
   liveById: Map<number, LivePlayerStat> | undefined,
+  proj: Map<string, ProjectionStat> | undefined,
 ) {
   const gw = eventStats.gw;
   // For the live GW, manager.summary_event_points is the freshest value; for
@@ -192,6 +198,11 @@ function buildApexTeam(
   const gwPts = gw === manager.gw
     ? manager.gwPoints
     : gwPointsFromHistory(history, gw);
+  const advice = computeAdvice({
+    squad,
+    proj: proj ?? new Map(),
+    fixturesByClub,
+  });
   return {
     teamName: manager.name,
     gw,
@@ -212,9 +223,9 @@ function buildApexTeam(
         ...(stat ? pitchEventFields(stat, eventStats.finished) : {}),
       };
     }),
-    captainPicks: [] as CaptainPick[],
+    captainPicks: advice.captainPicks,
     captainApplied: squad.starters.find((p) => p.capt)?.name ?? '',
-    suggestions: [] as Suggestion[],
+    suggestions: advice.suggestions,
     transfer: {
       freeTransfers: 1,
       squadValue: sumPrice([...squad.starters, ...squad.bench]),
