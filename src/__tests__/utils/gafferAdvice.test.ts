@@ -105,3 +105,46 @@ describe('optimalLineup', () => {
     expect(benchIds.slice(1)).toEqual(['m5', 'd5', 'd1']);
   });
 });
+
+import { captainPicksFrom } from '@/utils/gafferAdvice';
+import type { ClubCode } from '@/types/fpl';
+
+describe('captainPicksFrom', () => {
+  it('returns the top 3 starters ranked by adjusted p50 doubled', () => {
+    const starters = [sp('a', 'FWD'), sp('b', 'MID'), sp('c', 'DEF'), sp('d', 'MID')];
+    const proj = projMap({ a: 10, b: 8, c: 6, d: 4 });
+    const picks = captainPicksFrom(starters, proj);
+    expect(picks.map((p) => p.name)).toEqual(['Pa', 'Pb', 'Pc']); // d drops out
+    expect(picks[0].xp).toBe(20); // adjusted p50 10 × 2
+    expect(picks[1].xp).toBe(16);
+  });
+
+  it('tags a wide-band pick "explosive" and a narrow-band pick "safe"', () => {
+    const starters = [sp('a', 'FWD'), sp('b', 'MID')];
+    const proj = new Map([
+      ['a', { p25: 1, p50: 6, p75: 12 }], // spread 6 ≥ threshold → explosive
+      ['b', { p25: 5, p50: 6, p75: 7 }],  // spread 1 < threshold → safe
+    ]);
+    const picks = captainPicksFrom(starters, proj);
+    expect(picks.find((p) => p.name === 'Pa')!.note).toContain('explosive');
+    expect(picks.find((p) => p.name === 'Pb')!.note).toContain('safe');
+  });
+
+  it('includes the opponent + venue in the note when fixtures are supplied', () => {
+    const starters = [sp('a', 'FWD', { club: 'MCI' })];
+    const proj = projMap({ a: 9 });
+    const fixtures: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>> = {
+      MCI: { opp: 'LIV', h: true },
+    };
+    const note = captainPicksFrom(starters, proj, fixtures)[0].note;
+    expect(note).toContain('vs LIV (H)');
+    expect(note).toContain('ceiling 10.0'); // p75 = 10
+  });
+
+  it('falls back to ep_next and a fixture-only note when no projection exists', () => {
+    const starters = [sp('a', 'FWD', { gw: 7, club: 'ARS' })];
+    const picks = captainPicksFrom(starters, new Map());
+    expect(picks[0].xp).toBe(14); // 7 × 2
+    expect(picks[0].note).toBe(''); // no projection, no fixture → empty note
+  });
+});

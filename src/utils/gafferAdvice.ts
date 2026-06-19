@@ -7,6 +7,7 @@
 
 import type { SquadPlayer } from '@/api/squad';
 import type { ProjectionStat } from '@/api/projections';
+import type { CaptainPick, ClubCode } from '@/types/fpl';
 
 const HARD_OUT: ReadonlySet<string> = new Set(['i', 's', 'u', 'n']);
 
@@ -97,4 +98,49 @@ export function optimalLineup(
     .map((r) => r.p.id);
 
   return { starterIds, benchIds: [...benchGk, ...benchOutfield] };
+}
+
+// p75 − p50 gap above which a captain is flagged high-variance. Tunable v1 lever.
+const SPREAD_THRESHOLD = 1.5;
+
+function tagFor(spread: number): 'explosive' | 'safe' {
+  return spread >= SPREAD_THRESHOLD ? 'explosive' : 'safe';
+}
+
+function fixtureLabel(
+  p: SquadPlayer,
+  fixturesByClub?: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>>,
+): string {
+  const fx = fixturesByClub?.[p.club];
+  return fx ? `vs ${fx.opp} (${fx.h ? 'H' : 'A'})` : '';
+}
+
+// Note built from client-available signals only: fixture, ceiling, variance tag.
+function captainNote(
+  p: SquadPlayer,
+  proj: Map<string, ProjectionStat>,
+  fixturesByClub?: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>>,
+): string {
+  const fx = fixtureLabel(p, fixturesByClub);
+  if (!proj.get(p.id)) return fx; // ep_next fallback — fixture only (may be empty)
+  const ceiling = adjusted(p, proj, 'p75');
+  const spread = ceiling - adjusted(p, proj, 'p50');
+  return [fx, `ceiling ${ceiling.toFixed(1)}`, tagFor(spread)].filter(Boolean).join(' · ');
+}
+
+export function captainPicksFrom(
+  starters: SquadPlayer[],
+  proj: Map<string, ProjectionStat>,
+  fixturesByClub?: Partial<Record<ClubCode, { opp: ClubCode; h: boolean }>>,
+): CaptainPick[] {
+  return starters
+    .map((p) => ({ p, score: adjusted(p, proj, 'p50') * 2 }))
+    .sort((a, b) => b.score - a.score || b.p.gw - a.p.gw || a.p.id.localeCompare(b.p.id))
+    .slice(0, 3)
+    .map(({ p, score }) => ({
+      name: p.name,
+      club: p.club,
+      xp: round1(score),
+      note: captainNote(p, proj, fixturesByClub),
+    }));
 }
