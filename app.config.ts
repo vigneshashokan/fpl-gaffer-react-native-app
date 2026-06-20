@@ -12,6 +12,9 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: 'com.fantasygaffer.app',
     icon: './assets/logos/logo-mark.png',
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     package: 'com.fantasygaffer.app',
