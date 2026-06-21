@@ -7,9 +7,10 @@ import { ApexTokens } from '@/constants/apexTokens';
 interface ChipsRowProps {
   chips: TransferChip[];
   tk: ApexTokens;
+  onExpand?: (chipName: string) => void;
 }
 
-export function ChipsRow({ chips, tk }: ChipsRowProps) {
+export function ChipsRow({ chips, tk, onExpand }: ChipsRowProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const selChip = chips.find((c) => c.name === selected && c.state !== 'used');
   const tip = selChip?.tip;
@@ -27,7 +28,13 @@ export function ChipsRow({ chips, tk }: ChipsRowProps) {
             chip={c}
             tk={tk}
             selected={selected === c.name}
-            onToggle={() => setSelected((s) => (s === c.name ? null : c.name))}
+            onToggle={() =>
+              setSelected((s) => {
+                const next = s === c.name ? null : c.name;
+                if (next) onExpand?.(c.name);
+                return next;
+              })
+            }
           />
         ))}
       </ScrollView>
