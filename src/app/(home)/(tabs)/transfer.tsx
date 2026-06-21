@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { track } from '@/lib/analytics';
 import { useThemeStore } from '@/store/themeStore';
 import { getTheme } from '@/constants/theme';
 import { apexTokens } from '@/constants/apexTokens';
@@ -26,6 +27,12 @@ export default function TransferTab() {
   const { data: seasonState } = useSeasonState();
   const [pendingTransfers, setPendingTransfers] = useState<Record<string, boolean>>({});
   const pendingCount = Object.values(pendingTransfers).filter(Boolean).length;
+
+  useEffect(() => {
+    if (at && seasonState?.kind !== 'complete') {
+      track('decision_viewed', { type: 'transfer' });
+    }
+  }, [at, seasonState?.kind]);
 
   if (noTeam) {
     return (
@@ -58,14 +65,23 @@ export default function TransferTab() {
   const heroTo = dark ? '#0C1018' : '#5B0F63';
 
   const openTargets = (p: TransferPitchPlayer) => {
+    track('transfer_target_opened', { player_id: p.id });
     router.push({
       pathname: '/(home)/transfer-targets/[id]',
       params: { id: p.id },
     });
   };
 
-  const toggleTransfer = (id: string) =>
+  const toggleTransfer = (id: string) => {
+    const willApply = !pendingTransfers[id];
+    if (willApply) {
+      track('suggestion_expanded', {
+        type: 'transfer',
+        rank: tr.transferSuggestions.findIndex((s) => s.id === id),
+      });
+    }
     setPendingTransfers((s) => ({ ...s, [id]: !s[id] }));
+  };
 
   const toggleAllTransfers = (next: boolean) => {
     const all: Record<string, boolean> = {};
