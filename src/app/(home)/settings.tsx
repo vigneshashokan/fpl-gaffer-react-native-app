@@ -13,6 +13,7 @@ import { NotificationsCard } from '@/components/settings/NotificationsCard';
 import { BiometricCard } from '@/components/settings/BiometricCard';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { FollowUsRow } from '@/components/settings/FollowUsRow';
+import { PrivacyCard } from '@/components/settings/PrivacyCard';
 import { supabase } from '@/lib/supabase';
 import { shareApp, sendFeedback, openTerms } from '@/lib/external';
 import { FEEDBACK_EMAIL } from '@/constants/links';
@@ -48,6 +49,7 @@ export default function SettingsModal() {
         <Text style={[styles.sectionLabel, { color: tk.faint }]}>Preferences</Text>
         <NotificationsCard tk={tk} />
         <BiometricCard tk={tk} />
+        <PrivacyCard tk={tk} />
 
         <SectionCard title="More" tk={tk}>
           <SettingsRow
