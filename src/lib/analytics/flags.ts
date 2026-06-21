@@ -14,12 +14,12 @@ export type FlagValue<F extends FlagName> = (typeof FLAG_DEFAULTS)[F];
 
 export function resolveFlag<F extends FlagName>(
   name: F,
-  raw: boolean | string | undefined,
+  raw: boolean | string | null | undefined,
 ): FlagValue<F> {
   return (raw ?? FLAG_DEFAULTS[name]) as FlagValue<F>;
 }
 
 export function useFlag<F extends FlagName>(name: F): FlagValue<F> {
-  const raw = useFeatureFlag(name) as boolean | string | undefined;
+  const raw = useFeatureFlag(name) as boolean | string | null | undefined;
   return resolveFlag(name, raw);
 }

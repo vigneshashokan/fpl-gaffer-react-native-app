@@ -71,14 +71,15 @@ export function GameweekScreen({
   // Decision surfaces are only actionable on the upcoming GW (editable). Fire
   // one decision_viewed per surface when that page's data is ready. (Carousel
   // pre-render can mount adjacent pages — acceptable v1 over-count; the sharper
-  // signal is suggestion_expanded below.)
+  // signal is suggestion_expanded below.) deps are primitives so it fires once
+  // per page activation, not per refetch.
   const upcoming = at ? gw > at.liveGw : false;
   useEffect(() => {
     if (!at || !upcoming) return;
     track('decision_viewed', { type: 'captain' });
     track('decision_viewed', { type: 'bench' });
     track('decision_viewed', { type: 'chip' });
-  }, [gw, upcoming, at]);
+  }, [gw, upcoming]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isPending || !at) {
     return (

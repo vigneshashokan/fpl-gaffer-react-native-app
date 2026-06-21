@@ -27,6 +27,9 @@ describe('handleAuthChange', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('identifies the user and tracks sign_in on SIGNED_IN', () => {
+    // Reset module state first so this case is clean.
+    handleAuthChange('SIGNED_OUT', null);
+    jest.clearAllMocks();
     handleAuthChange('SIGNED_IN', {
       user: { id: 'u-9', app_metadata: { provider: 'google' } },
     } as never);
@@ -35,13 +38,29 @@ describe('handleAuthChange', () => {
   });
 
   it('falls back to provider "unknown" when missing', () => {
+    handleAuthChange('SIGNED_OUT', null);
+    jest.clearAllMocks();
     handleAuthChange('SIGNED_IN', { user: { id: 'u-1', app_metadata: {} } } as never);
     expect(mockTrack).toHaveBeenCalledWith('sign_in', { provider: 'unknown' });
   });
 
   it('resets identity on SIGNED_OUT', () => {
     handleAuthChange('SIGNED_OUT', null);
+    jest.clearAllMocks();
+    handleAuthChange('SIGNED_OUT', null);
     expect(mockReset).toHaveBeenCalled();
     expect(mockIdentify).not.toHaveBeenCalled();
+  });
+
+  it('deduplicates sign_in: fires track once but identify on every SIGNED_IN for same user', () => {
+    // Reset module-level state via SIGNED_OUT, then clear mocks.
+    handleAuthChange('SIGNED_OUT', null);
+    jest.clearAllMocks();
+    const session = { user: { id: 'dup-1', app_metadata: { provider: 'email' } } } as never;
+    handleAuthChange('SIGNED_IN', session);
+    handleAuthChange('SIGNED_IN', session);
+    expect(mockTrack).toHaveBeenCalledTimes(1);
+    expect(mockTrack).toHaveBeenCalledWith('sign_in', { provider: 'email' });
+    expect(mockIdentify).toHaveBeenCalledTimes(2);
   });
 });

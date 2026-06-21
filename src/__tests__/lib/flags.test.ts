@@ -21,4 +21,8 @@ describe('resolveFlag', () => {
       'xpts_model_v2',
     ]);
   });
+
+  it('treats null the same as undefined — falls back to the typed default', () => {
+    expect(resolveFlag('premium_paywall', null)).toBe(false);
+  });
 });

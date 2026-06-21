@@ -15,6 +15,8 @@ export const posthog = new PostHog(KEY ?? 'phc_disabled', {
   host: HOST,
   disabled: !KEY,
   disableGeoip: true, // don't resolve/store client IP geolocation
+  // Auto-sends raw `Application Opened`/`Application Backgrounded` events OUTSIDE
+  // the typed EventMap catalog — the one place non-cataloged events are emitted.
   captureAppLifecycleEvents: true,
 });
 
@@ -47,4 +49,4 @@ export function setAnalyticsConsent(enabled: boolean): void {
   else optOut();
 }
 
-export type { EventName } from './events';
+export type { EventName, DecisionType } from './events';

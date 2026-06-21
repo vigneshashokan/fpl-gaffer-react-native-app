@@ -14,7 +14,7 @@ jest.mock('expo-router', () => ({
   usePathname: () => mockPathname,
 }));
 
-import { useScreenTracking } from '@/lib/analytics/provider';
+import { useScreenTracking, normalizeScreen } from '@/lib/analytics/provider';
 
 describe('useScreenTracking', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -34,5 +34,15 @@ describe('useScreenTracking', () => {
     expect(mockTrack).toHaveBeenCalledWith('screen_viewed', {
       screen: '/(home)/(tabs)/transfer',
     });
+  });
+});
+
+describe('normalizeScreen', () => {
+  it('replaces pure-numeric path segments with [id]', () => {
+    expect(normalizeScreen('/(home)/player/42')).toBe('/(home)/player/[id]');
+  });
+
+  it('leaves paths with no numeric segment unchanged', () => {
+    expect(normalizeScreen('/(home)/(tabs)/team')).toBe('/(home)/(tabs)/team');
   });
 });

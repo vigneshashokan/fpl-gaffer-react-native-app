@@ -4,6 +4,15 @@ import { usePathname } from 'expo-router';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog, track } from '@/lib/analytics';
 
+// Collapse concrete entity ids (player/target ids) to their route template so
+// `screen` stays low-cardinality and carries no per-entity values.
+export function normalizeScreen(pathname: string): string {
+  return pathname
+    .split('/')
+    .map((seg) => (/^\d+$/.test(seg) ? '[id]' : seg))
+    .join('/');
+}
+
 // Fires `screen_viewed` on every route change and refreshes feature flags when
 // the app returns to the foreground (flags are cached to storage by the SDK for
 // offline reads → "readable at startup + on resume").
@@ -11,7 +20,7 @@ export function useScreenTracking(): void {
   const pathname = usePathname();
 
   useEffect(() => {
-    track('screen_viewed', { screen: pathname });
+    track('screen_viewed', { screen: normalizeScreen(pathname) });
   }, [pathname]);
 
   useEffect(() => {
