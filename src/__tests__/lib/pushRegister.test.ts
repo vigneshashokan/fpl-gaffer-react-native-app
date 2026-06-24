@@ -10,6 +10,9 @@ import { registerForPushNotifications } from '@/lib/notifications/register';
 
 describe('registerForPushNotifications', () => {
   beforeEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    (Device as { isDevice: boolean }).isDevice = true;
+  });
 
   it('returns the token when permission is granted', async () => {
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted', canAskAgain: true });
@@ -41,5 +44,13 @@ describe('registerForPushNotifications', () => {
     const r = await registerForPushNotifications();
     expect(r.token).toBeNull();
     expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
+  });
+
+  it('swallows a token-fetch rejection and returns token null', async () => {
+    (Device as { isDevice: boolean }).isDevice = true;
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted', canAskAgain: true });
+    (Notifications.getExpoPushTokenAsync as jest.Mock).mockRejectedValue(new Error('no network'));
+    const r = await registerForPushNotifications();
+    expect(r).toEqual({ status: 'granted', token: null });
   });
 });

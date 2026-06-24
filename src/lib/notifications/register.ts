@@ -36,6 +36,12 @@ export async function registerForPushNotifications(): Promise<RegistrationResult
   if (status !== 'granted') return { status, token: null };
 
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
-  const resp = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
-  return { status, token: resp.data };
+  try {
+    const resp = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+    return { status, token: resp.data };
+  } catch {
+    // Token fetch can fail on a real device (no network, APNs/FCM not yet
+    // configured). Degrade to no-token rather than throwing into callers.
+    return { status, token: null };
+  }
 }
