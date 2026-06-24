@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { identify, reset, track } from '@/lib/analytics';
 
 interface AuthState {
   session: Session | null;
@@ -8,10 +9,33 @@ interface AuthState {
   signOut: () => Promise<void>;
 }
 
+// Tracks the last user id for which we fired sign_in so that session-restore /
+// foreground / token-refresh events (all emit SIGNED_IN) don't inflate the funnel.
+let lastSignInUserId: string | null = null;
+
+// Mirrors auth lifecycle into analytics: stitch identity across sessions on
+// sign-in, clear it on sign-out, and record the sign_in funnel event. Exported
+// so it can be unit-tested without the module-init subscription.
+export function handleAuthChange(event: AuthChangeEvent, session: Session | null): void {
+  if (event === 'SIGNED_IN' && session) {
+    identify(session.user.id);
+    if (session.user.id !== lastSignInUserId) {
+      const provider = (session.user.app_metadata?.provider as string | undefined) ?? 'unknown';
+      track('sign_in', { provider });
+      lastSignInUserId = session.user.id;
+    }
+  }
+  if (event === 'SIGNED_OUT') {
+    reset();
+    lastSignInUserId = null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => {
   // Subscribe once at module init.
-  supabase.auth.onAuthStateChange((_event, session) => {
+  supabase.auth.onAuthStateChange((event, session) => {
     set({ session, hydrated: true });
+    handleAuthChange(event, session);
   });
 
   // Resolve current session so cold-start doesn't wait for an event.

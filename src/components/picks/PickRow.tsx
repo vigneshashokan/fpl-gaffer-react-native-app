@@ -2,6 +2,7 @@ import { ApexTokens } from '@/constants/apexTokens';
 import { jerseyForClub } from '@/constants/jerseys';
 import type { ClubCode, Fixture, TopPickPlayer } from '@/types/fpl';
 import { xpColor } from '@/utils/xpts';
+import { track } from '@/lib/analytics';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -39,8 +40,10 @@ export function PickRow({
       ? (dark ? '#DDD6FE' : '#C4B5FD')
       : (dark ? '#A78BFA' : '#7C3AED');
   const jersey = jerseyForClub(p.club);
-  const openStats = () =>
+  const openStats = () => {
+    track('pick_row_opened', { player_id: p.id });
     router.push({ pathname: '/(home)/player/[id]', params: { id: p.id } });
+  };
 
   return (
     <Pressable

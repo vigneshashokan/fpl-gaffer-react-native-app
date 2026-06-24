@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { track } from '@/lib/analytics';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeStore } from '@/store/themeStore';
@@ -66,6 +67,19 @@ export function GameweekScreen({
     // clobber the live scroll position with 0.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Decision surfaces are only actionable on the upcoming GW (editable). Fire
+  // one decision_viewed per surface when that page's data is ready. (Carousel
+  // pre-render can mount adjacent pages — acceptable v1 over-count; the sharper
+  // signal is suggestion_expanded below.) deps are primitives so it fires once
+  // per page activation, not per refetch.
+  const upcoming = at ? gw > at.liveGw : false;
+  useEffect(() => {
+    if (!at || !upcoming) return;
+    track('decision_viewed', { type: 'captain' });
+    track('decision_viewed', { type: 'bench' });
+    track('decision_viewed', { type: 'chip' });
+  }, [gw, upcoming]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isPending || !at) {
     return (
@@ -139,7 +153,16 @@ export function GameweekScreen({
         {isUpcoming && (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: tk.faint }]}>Play a Chip</Text>
-            <ChipsRow chips={at.transfer.chips} tk={tk} />
+            <ChipsRow
+              chips={at.transfer.chips}
+              tk={tk}
+              onExpand={(name) =>
+                track('suggestion_expanded', {
+                  type: 'chip',
+                  rank: at.transfer.chips.findIndex((c) => c.name === name),
+                })
+              }
+            />
           </View>
         )}
 
@@ -182,7 +205,13 @@ export function GameweekScreen({
             tk={tk}
             editable={isUpcoming}
             pendingCaptain={pendingCaptain}
-            onPick={onPickCaptain}
+            onPick={(name) => {
+              track('suggestion_expanded', {
+                type: 'captain',
+                rank: at.captainPicks.findIndex((p) => p.name === name),
+              });
+              onPickCaptain(name);
+            }}
           />
         </View>
 
@@ -192,7 +221,13 @@ export function GameweekScreen({
             tk={tk}
             editable={isUpcoming}
             applied={pendingSuggestions}
-            onToggle={onToggleSuggestion}
+            onToggle={(id) => {
+              track('suggestion_expanded', {
+                type: 'bench',
+                rank: at.suggestions.findIndex((s) => s.id === id),
+              });
+              onToggleSuggestion(id);
+            }}
             onToggleAll={(next) => onToggleAllSuggestions(next, at.suggestions)}
             lockedNote={
               gwState === 'live'
