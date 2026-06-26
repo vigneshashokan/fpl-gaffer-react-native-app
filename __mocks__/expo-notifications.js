@@ -5,6 +5,8 @@ module.exports = {
   __esModule: true,
   PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
   AndroidImportance: { DEFAULT: 3, MAX: 5 },
+  SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', DATE: 'date', DAILY: 'daily' },
+  scheduleNotificationAsync: jest.fn().mockResolvedValue('test-notification-id'),
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
   getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'undetermined', granted: false, canAskAgain: true }),
