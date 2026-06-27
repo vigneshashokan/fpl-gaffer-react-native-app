@@ -64,7 +64,6 @@ export function squadFromPicks(
 }
 
 const FPL_STALE = 60 * 1000;
-const FPL_GC = 30 * 60 * 1000;
 
 export function useSquad(targetGw?: number) {
   const profile = useProfile();
@@ -81,7 +80,6 @@ export function useSquad(targetGw?: number) {
     },
     enabled: teamId !== null && gwId !== null && gwId > 0 && Array.isArray(players.data),
     staleTime: FPL_STALE,
-    gcTime: FPL_GC,
   });
 }
 

@@ -39,4 +39,16 @@ describe('FPL hook cadence (#80)', () => {
       expect.objectContaining({ staleTime: 60 * 1000 }),
     );
   });
+
+  it('useManager no longer overrides gcTime (inherits the 24h default)', () => {
+    renderHook(() => useManager());
+    const opts = mockUseQuery.mock.calls[0][0];
+    expect(opts.gcTime).toBeUndefined();
+  });
+
+  it('useSquad no longer overrides gcTime (inherits the 24h default)', () => {
+    renderHook(() => useSquad());
+    const opts = mockUseQuery.mock.calls[0][0];
+    expect(opts.gcTime).toBeUndefined();
+  });
 });
