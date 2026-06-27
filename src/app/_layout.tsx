@@ -23,6 +23,7 @@ import { useEmailAuthDeepLinks } from '@/lib/auth/deepLink';
 import { AuthErrorBoundary } from '@/lib/auth/authErrorBoundary';
 import { AuthCacheClear } from '@/lib/auth/authCacheClear';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { CACHE_MAX_AGE } from '@/lib/query/persister';
 import { AnalyticsProvider, useScreenTracking } from '@/lib/analytics/provider';
 import '@/lib/notifications/handler';
 import '@/lib/reactQueryFocus';
@@ -55,6 +56,7 @@ export default function RootLayout() {
         defaultOptions: {
           queries: {
             retry: 2,
+            gcTime: CACHE_MAX_AGE,
             refetchOnWindowFocus: true,
             refetchOnReconnect: true,
           },
