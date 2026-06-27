@@ -66,7 +66,6 @@ export function chipsFromHistory(history: FplHistory): Chip[] {
 }
 
 const FPL_STALE = 5 * 60 * 1000;
-const FPL_GC    = 30 * 60 * 1000;
 
 export function useManager() {
   const profile = useProfile();
@@ -76,7 +75,6 @@ export function useManager() {
     queryFn: async () => managerFromEntry(await fplGet<FplEntry>(`/entry/${teamId}/`)),
     enabled: teamId !== null,
     staleTime: FPL_STALE,
-    gcTime: FPL_GC,
   });
 }
 
@@ -88,7 +86,6 @@ export function useManagerHistory() {
     queryFn: () => fplGet<FplHistory>(`/entry/${teamId}/history/`),
     enabled: teamId !== null,
     staleTime: FPL_STALE,
-    gcTime: FPL_GC,
   });
 }
 

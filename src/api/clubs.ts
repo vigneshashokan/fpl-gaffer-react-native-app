@@ -43,7 +43,6 @@ export function useClubs() {
     queryKey: queryKeys.clubs,
     queryFn: queryClubs,
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
   });
 }
 
@@ -67,6 +66,5 @@ export function useClubCodeByTeamId() {
     queryKey: queryKeys.clubsByTeamId,
     queryFn: queryClubsByTeamId,
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
   });
 }

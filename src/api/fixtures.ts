@@ -85,7 +85,6 @@ function useBootstrap() {
     queryKey: queryKeys.bootstrap,
     queryFn: () => fplGet<BootstrapResponse>('/bootstrap-static/'),
     staleTime: 60 * 60 * 1000,
-    gcTime:    60 * 60 * 1000,
   });
 }
 
@@ -133,7 +132,6 @@ export function useEventLive(gw: number) {
       return liveStatsById(data.elements);
     },
     staleTime: 60 * 1000,
-    gcTime: 30 * 60 * 1000,
     enabled: Number.isFinite(gw) && gw > 0,
   });
 }
@@ -175,7 +173,6 @@ export function useFixturesByGw(gw: number) {
       return fixturesFromRows((fxRes.data ?? []) as FixtureRow[], clubByTeamId);
     },
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
     enabled: Number.isFinite(gw) && gw > 0,
   });
 }
@@ -231,6 +228,5 @@ export function useAllFixtures() {
       return seasonFixturesFromRows((fxRes.data ?? []) as AllFixtureRow[], clubByTeamId);
     },
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
   });
 }

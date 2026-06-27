@@ -42,7 +42,6 @@ export function useProjections(gw: number) {
       return projectionsFromRows((data ?? []) as ProjectionRow[]);
     },
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
     enabled: Number.isFinite(gw) && gw > 0,
   });
 }

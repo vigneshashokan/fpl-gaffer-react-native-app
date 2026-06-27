@@ -22,10 +22,14 @@ import { useAuthStore } from '@/store/authStore';
 import { useEmailAuthDeepLinks } from '@/lib/auth/deepLink';
 import { AuthErrorBoundary } from '@/lib/auth/authErrorBoundary';
 import { AuthCacheClear } from '@/lib/auth/authCacheClear';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, useIsRestoring } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AnalyticsProvider, useScreenTracking } from '@/lib/analytics/provider';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { CACHE_MAX_AGE, persistOptions } from '@/lib/query/persister';
 import '@/lib/notifications/handler';
 import '@/lib/reactQueryFocus';
+import '@/lib/query/onlineManager';
 import { useNotificationDeepLinks } from '@/lib/notifications/useNotificationDeepLinks';
 
 SplashScreen.preventAutoHideAsync();
@@ -55,6 +59,7 @@ export default function RootLayout() {
         defaultOptions: {
           queries: {
             retry: 2,
+            gcTime: CACHE_MAX_AGE,
             refetchOnWindowFocus: true,
             refetchOnReconnect: true,
           },
@@ -68,22 +73,46 @@ export default function RootLayout() {
     return useThemeStore.persist.onFinishHydration(() => setThemeHydrated(true));
   }, [themeHydrated]);
 
-  useEffect(() => {
-    if (fontsLoaded && themeHydrated && authHydrated) SplashScreen.hideAsync();
-  }, [fontsLoaded, themeHydrated, authHydrated]);
+  return (
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+      <AppGate
+        fontsLoaded={fontsLoaded}
+        themeHydrated={themeHydrated}
+        authHydrated={authHydrated}
+      />
+    </PersistQueryClientProvider>
+  );
+}
 
-  if (!fontsLoaded || !themeHydrated || !authHydrated) return null;
+function AppGate({
+  fontsLoaded,
+  themeHydrated,
+  authHydrated,
+}: {
+  fontsLoaded: boolean;
+  themeHydrated: boolean;
+  authHydrated: boolean;
+}) {
+  // Hold the splash until the persisted cache has rehydrated, so the first paint
+  // already has data — no spinner flash when the cache is fresh.
+  const isRestoring = useIsRestoring();
+  const ready = fontsLoaded && themeHydrated && authHydrated && !isRestoring;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AnalyticsProvider>
-        <AuthErrorBoundary />
-        <AuthCacheClear />
-        <SafeAreaProvider>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false }} />
-        </SafeAreaProvider>
-      </AnalyticsProvider>
-    </QueryClientProvider>
+    <AnalyticsProvider>
+      <AuthErrorBoundary />
+      <AuthCacheClear />
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <OfflineBanner />
+        <Stack screenOptions={{ headerShown: false }} />
+      </SafeAreaProvider>
+    </AnalyticsProvider>
   );
 }

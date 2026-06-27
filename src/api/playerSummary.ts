@@ -92,7 +92,6 @@ export function useElementSummary(id: string | undefined) {
     queryFn: () => fetchPlayerSummary(id as string),
     enabled: !!id,
     staleTime: 15 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
   });
 }
 
